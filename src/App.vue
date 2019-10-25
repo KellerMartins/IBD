@@ -30,8 +30,12 @@
       color="cyan"
       dark
     >
+      
+
+      <img src="@/assets/ibge.png" style="height: inherit;">
       <v-spacer></v-spacer>
-      <v-toolbar-title>Application</v-toolbar-title>
+      <v-toolbar-title id="title">Dados da população</v-toolbar-title>
+      <v-spacer></v-spacer>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
     </v-app-bar>
 
@@ -42,7 +46,7 @@
       app
     >
       <v-spacer></v-spacer>
-      <span class="white--text">&copy; 2019/2</span>
+      <span class="white--text">&copy; 2019</span>
     </v-footer>
   </v-app>
 </template>
@@ -59,9 +63,14 @@
     data: () => ({
       drawer: null,
     }),
+    created(){
+      window.addEventListener("load", function() { window. scrollTo(0, 0); });
+      document.addEventListener("touchmove", function(e) { e.preventDefault() })
+    }
   }
 </script>
 
 <style>
   html { overflow-y: auto }
+  #title {font-weight:bold;}
 </style>
