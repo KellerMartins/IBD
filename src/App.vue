@@ -4,9 +4,10 @@
       v-model="drawer"
       app
       right
+      touchless
     >
       <v-list dense>
-        <v-list-item>
+        <v-list-item link>
           <v-list-item-action>
             <v-icon>mdi-home</v-icon>
           </v-list-item-action>
@@ -14,7 +15,7 @@
             <v-list-item-title>Home</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item>
+        <v-list-item link>
           <v-list-item-action>
             <v-icon>mdi-contact-mail</v-icon>
           </v-list-item-action>
@@ -64,13 +65,18 @@
       drawer: null,
     }),
     created(){
-      window.addEventListener("load", function() { window. scrollTo(0, 0); });
-      document.addEventListener("touchmove", function(e) { e.preventDefault() })
     }
   }
 </script>
 
 <style>
-  html { overflow-y: auto }
+  html, body {
+    /* Disables address bar hiding*/
+    margin: 0; height: 100%; overflow: hidden
+  }
+  * {
+    /* Disables pull-to-refresh*/
+    overscroll-behavior: none;
+  }
   #title {font-weight:bold;}
 </style>
