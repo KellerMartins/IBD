@@ -1,6 +1,11 @@
 <template>
   <div class="hello">
-    <h1>{{ msg }}</h1>
+    <ul v-if="pressed">
+      <li v-for="item in list"  v-bind:key="item.name">
+        {{ item.name }}
+      </li>
+    </ul>
+    <button v-if="!pressed" v-on:click="press()">Press this!</button>
     <p>
       For a guide and recipes on how to configure / customize this project,<br>
       check out the
@@ -35,6 +40,22 @@ export default {
   name: 'HelloWorld',
   props: {
     msg: String
+  },
+  data: function () {
+    return{
+      list: [],
+      pressed: false
+    }
+  },
+  methods: {
+    press (){
+      fetch('https://api.myjson.com/bins/74l63')
+      .then(response => response.json())
+      .then(data => {
+        this.list = data.products
+      })
+      this.pressed = true
+    }
   }
 }
 </script>
