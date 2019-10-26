@@ -15,8 +15,6 @@ export default {
       camera: null,
       scene: null,
       renderer: null,
-      mesh: null,
-      loaded: false,
     }
   },
   methods: {
@@ -62,6 +60,7 @@ export default {
 
       this.intersection_sphere
       this.selecting = false
+      this.selectionMode = false
 
 
       var geometry = new THREE.SphereGeometry( 0.1, 4, 4)
@@ -74,6 +73,7 @@ export default {
       document.addEventListener('mouseup', this.onDocumentMouseUp, false)
 
     },
+
     animate: function() {
       requestAnimationFrame(this.animate)
       var p = this.camera.position
@@ -81,9 +81,13 @@ export default {
       var k = (dist-this.controls.minDistance) / (this.controls.maxDistance - this.controls.minDistance)
       this.controls.rotateSpeed = k*0.16 + (1-k)*0.0125
 
+      this.controls.enabled = !this.selectionMode
+      this.selection_start_obj.visible = this.selectionMode && this.selecting
+
       this.controls.update()
       this.renderer.render(this.scene, this.camera)
     },
+
     resize: function() {
       if (this.renderer && this.camera) {
         if (typeof this.portrait !== 'undefined'){
@@ -101,12 +105,34 @@ export default {
         this.renderer.setSize(width, height)
       }
     },
+
+
+
+    toggleSelectionMode: function () {
+      if (this.selectionMode)
+        this.disableSelectionMode()
+      else
+        this.enableSelectionMode()
+    },
+
+    enableSelectionMode: function() {
+      this.selectionMode = true
+      this.$emit('enabledSelection')
+    },
+
+    disableSelectionMode: function() {
+      this.selectionMode = false
+      this.selecting = false
+      this.$emit('disabledSelection')
+    },
+
     cartesianToSpherical: function (pos) {
       var rho = Math.sqrt(pos.x*pos.x + pos.y*pos.y + pos.z*pos.z)
       var theta = Math.atan(pos.z/pos.x)
       var phi = Math.acos(pos.y/rho)
       return new THREE.Vector2(phi, theta)
     },
+
     changeSelectionSphere: function (start, end) {
         var phi_min = Math.min(start.y, end.y)
         var phi_max = Math.max(start.y, end.y)
@@ -119,44 +145,73 @@ export default {
         this.sphere_region.geometry.dispose()
         this.sphere_region.geometry = geometry
     },
+
+    resetSelectionSphere: function () {
+        var geometry = new THREE.SphereGeometry( 0.1, 4, 4)
+        this.sphere_region.geometry.dispose()
+        this.sphere_region.geometry = geometry
+    },
+
+
+
     onDocumentMouseDown: function (event) {
       event.preventDefault()
-      if (event.button === 2) {
+      if (event.button === 2 || this.selectionMode) {
 
         var intersect = this.getMouseIntersection()
         if (intersect) {
-          this.coord_start = this.cartesianToSpherical(intersect)
-          this.selecting = true
+          if (!this.selecting) {
+            this.coord_start = this.cartesianToSpherical(intersect)
+            this.selecting = true
+            this.selection_start_obj.position = intersect;
+          } else{
+            this.selecting = false
+            this.disableSelectionMode()
+            this.coord_end = this.cartesianToSpherical(intersect)
+            if (this.coord_start.distanceTo(this.coord_end) > 0)
+              this.changeSelectionSphere(this.coord_start, this.coord_end)
+            else
+              this.resetSelectionSphere()
+          }
         }
       }
     },
+
     onDocumentMouseMove: function (event) {
       event.preventDefault()
       var rect = this.renderer.domElement.getBoundingClientRect();
       this.mouse.x =   ((event.clientX - rect.left) / window.innerWidth ) * 2 - 1;
       this.mouse.y = - ((event.clientY - rect.top) / window.innerHeight ) * 2 + 1;
 
-      var intersect = this.getMouseIntersection()
-      if (intersect) {
+      if (!this.selectionMode) {
+        var intersect = this.getMouseIntersection()
+        if (intersect) {
 
-        if (this.selecting) {
-          this.coord_move = this.cartesianToSpherical(intersect)
-          this.changeSelectionSphere(this.coord_start, this.coord_move)
+          if (this.selecting) {
+            this.coord_move = this.cartesianToSpherical(intersect)
+            if (this.coord_start.distanceTo(this.coord_move) > 0)
+              this.changeSelectionSphere(this.coord_start, this.coord_move)
+          }
         }
       }
     },
+
     onDocumentMouseUp: function (event) {
       event.preventDefault()
-      if (event.button === 2) {
+      if (event.button === 2 && !this.selectionMode) {
 
         var intersect = this.getMouseIntersection()
         if (intersect) {
-          this.coord_end = this.cartesianToSpherical(intersect)
-          this.changeSelectionSphere(this.coord_start, this.coord_end)
           this.selecting = false
+          this.coord_end = this.cartesianToSpherical(intersect)
+          if (this.coord_start.distanceTo(this.coord_end) > 0)
+            this.changeSelectionSphere(this.coord_start, this.coord_end)
+          else
+            this.resetSelectionSphere()
         }
       }
     },
+    
     getMouseIntersection: function () {
       if (this.intersection_sphere) {
         this.raycaster.setFromCamera( this.mouse, this.camera )
@@ -171,9 +226,13 @@ export default {
 
       return false
     },
+
+
+
     clamp: function (number, min, max) {
       return Math.max(min, Math.min(number, max));
     },
+
     generate_point_cloud: function (points) {
       var vertices = [];
       var point_sizes =  [];
@@ -257,12 +316,23 @@ export default {
       this.scene.add(city_cloud);
 
 
+
+      geometry = new THREE.BufferGeometry();
+      geometry.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array([0,0,0]), 3 ) );
+      geometry.addAttribute( 'customColor', new THREE.BufferAttribute( new Float32Array([2,2,0]), 3 ) );
+      geometry.addAttribute( 'size', new THREE.BufferAttribute( new Float32Array([100]), 1 ) );
+      this.selection_start_obj = new THREE.Points( geometry, material );
+      this.scene.add(this.selection_start_obj);
+
+
+
       var map_contour = getContour(points, vertices);
       var map_outline_geo = new THREE.Geometry();
       for (let i = 0; i < map_contour.length-1; i++){
         map_outline_geo.vertices.push(new THREE.Vector3( map_contour[i].vx, map_contour[i].vy, map_contour[i].vz+0.01) );
       }
       this.scene.add(new THREE.LineLoop(map_outline_geo, new THREE.LineBasicMaterial( { color: 0x000000, linewidth: 3 } ) ) );
+
 
 
       var map_geo = geometryFromContour(map_contour);
@@ -318,7 +388,7 @@ export default {
       const points = data.body
       this.generate_point_cloud(points);
       this.animate();
-      this.loaded = true;
+      this.$emit('loadedMap')
     })
   },
 }

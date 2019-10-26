@@ -44,19 +44,25 @@
     <v-content>
       <v-card id="create"
         height=100%
-        :loading="$refs.map && $refs.map.loaded == false"
+        v-bind:loading="!loaded"
       >
-        <Map ref="map"/>
-          <v-btn
-            color="cyan"
-            dark
-            fab
-            left
-            fixed
-            bottom
-          >
-            <v-icon >mdi-selection</v-icon>
-          </v-btn>
+        <Map ref="map" 
+          v-on:loadedMap="loaded = true" 
+          v-on:enabledSelection="selectionMode = true"
+          v-on:disabledSelection="selectionMode = false"
+        />
+        
+        <v-btn
+          dark
+          fab
+          left
+          fixed
+          bottom
+          v-on:click="toggleSelect"
+          v-bind:color="selectionMode? 'yellow':'cyan'"
+        >
+          <v-icon >mdi-selection</v-icon>
+        </v-btn>
       </v-card>
     </v-content>
 
@@ -74,10 +80,16 @@
     },
     data: () => ({
       drawer: null,
-      loadedMap: Map.loaded,
+      loaded: false,
+      selectionMode: false,
     }),
-    created(){
-    }
+    methods: {
+      toggleSelect: function() {
+        if (this.$refs.map) {
+          this.$refs.map.toggleSelectionMode()
+        }
+      },
+    },
   }
 </script>
 
