@@ -64,7 +64,7 @@ export default {
 
 
       var geometry = new THREE.SphereGeometry( 0.1, 4, 4)
-      var material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide, opacity:0.75, transparent:true} )
+      var material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide, opacity:0.75, transparent:true, depthTest:false} )
       this.sphere_region = new THREE.Mesh( geometry, material )
       this.scene.add(this.sphere_region)
 
@@ -139,7 +139,7 @@ export default {
         var theta_min = Math.min(start.x, end.x)
         var theta_max = Math.max(start.x, end.x)
 
-        var geometry = new THREE.SphereGeometry( 102, 8, 8, 
+        var geometry = new THREE.SphereGeometry( 100, 8, 8, 
           -start.y, (phi_max-phi_min) * Math.sign(start.y-end.y),
         start.x, (theta_max-theta_min) * Math.sign(end.x-start.x))
         this.sphere_region.geometry.dispose()
@@ -221,7 +221,7 @@ export default {
           return inters[0].point
         
       } else {
-        this.intersection_sphere = new THREE.Mesh( new THREE.SphereGeometry( 103, 32, 32 ), new THREE.MeshBasicMaterial( {color: 0xffff00} ))
+        this.intersection_sphere = new THREE.Mesh( new THREE.SphereGeometry( 100, 32, 32 ), new THREE.MeshBasicMaterial( {color: 0xffff00} ))
       }
 
       return false
