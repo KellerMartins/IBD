@@ -40,15 +40,26 @@
       <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
     </v-app-bar>
 
-    <Map/>
+    
+    <v-content>
+      <v-card id="create"
+        height=100%
+        :loading="$refs.map && $refs.map.loaded == false"
+      >
+        <Map ref="map"/>
+          <v-btn
+            color="cyan"
+            dark
+            fab
+            left
+            fixed
+            bottom
+          >
+            <v-icon >mdi-selection</v-icon>
+          </v-btn>
+      </v-card>
+    </v-content>
 
-    <v-footer
-      color="cyan"
-      app
-    >
-      <v-spacer></v-spacer>
-      <span class="white--text">&copy; 2019</span>
-    </v-footer>
   </v-app>
 </template>
 
@@ -63,6 +74,7 @@
     },
     data: () => ({
       drawer: null,
+      loadedMap: Map.loaded,
     }),
     created(){
     }

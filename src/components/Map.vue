@@ -15,7 +15,8 @@ export default {
       camera: null,
       scene: null,
       renderer: null,
-      mesh: null
+      mesh: null,
+      loaded: false,
     }
   },
   methods: {
@@ -45,10 +46,11 @@ export default {
       this.scene = new THREE.Scene()
       this.scene.background = new THREE.Color( 0xedfcfb )
 
-      this.renderer = new THREE.WebGLRenderer({ alpha: true })
+      this.renderer = new THREE.WebGLRenderer({ alpha:true, antialias: true })
       this.renderer.setPixelRatio( window.devicePixelRatio )
       this.renderer.setSize( window.innerWidth, window.innerHeight )
       container.parentNode.appendChild( this.renderer.domElement )
+      this.renderer.domElement.id = "mapCanvas"
 
 
       this.raycaster = new THREE.Raycaster()
@@ -130,8 +132,9 @@ export default {
     },
     onDocumentMouseMove: function (event) {
       event.preventDefault()
-      this.mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-      this.mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+      var rect = this.renderer.domElement.getBoundingClientRect();
+      this.mouse.x =   ((event.clientX - rect.left) / window.innerWidth ) * 2 - 1;
+      this.mouse.y = - ((event.clientY - rect.top) / window.innerHeight ) * 2 + 1;
 
       var intersect = this.getMouseIntersection()
       if (intersect) {
@@ -315,17 +318,21 @@ export default {
       const points = data.body
       this.generate_point_cloud(points);
       this.animate();
+      this.loaded = true;
     })
   },
 }
 </script>
 
-<style scoped>
+<style>
 #container {
   margin: 0;
   min-width: 100%;
   min-height: 100%;
   overflow:hidden;
+  position: absolute;
+}
+#mapCanvas {
   position: absolute;
 }
 </style>
