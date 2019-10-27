@@ -23,10 +23,10 @@ export default {
 
       this.camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 1200 )
       this.camera.position.x = -194
-      this.camera.position.y = -47
+      this.camera.position.y = -70
       this.camera.position.z = 151
       this.camera.rotation = new THREE.Euler( 0.3043099695380036,
-                                             -0.8860184479114381,
+                                             -0.860184479114381,
                                               0.2386270538109674, 'XYZ')
 
       this.controls = new OrbitControls(this.camera)
@@ -107,6 +107,15 @@ export default {
     },
 
 
+    drawDebug: function(pos) {
+      var geometry = new THREE.SphereGeometry( 5, pos.x != 0? 8:8, 4)
+      var material = new THREE.MeshBasicMaterial( {color: 0xff0000, side: THREE.DoubleSide, opacity:0.75, transparent:true, depthTest:false} )
+      var dbg = new THREE.Mesh( geometry, material )
+      this.scene.add(dbg)
+      dbg.position = pos
+    },
+
+
 
     toggleSelectionMode: function () {
       if (this.selectionMode)
@@ -126,11 +135,35 @@ export default {
       this.$emit('disabledSelection')
     },
 
+
+    //TODO: Figure out a correct conversion between coordinate systems
+    sphericalToCartesian: function (pos) {
+      var phi = -pos.x;
+      var theta = pos.y;
+      var r = pos.hasOwnProperty('z')? pos.z : 100;
+      var x = r * Math.sin(phi) * Math.cos(theta)
+      var z = r * Math.sin(phi) * Math.sin(theta)
+      var y = r * Math.cos(phi)
+      return new THREE.Vector3(-x, y, z)
+    },
+
+    geographicToCartesian: function (pos) {
+      var geo = new THREE.Vector3((pos.x-90)*Math.PI/180, 
+                                  (pos.y+90)*Math.PI/180, 
+                                  pos.hasOwnProperty('z')? pos.z : 100);
+      return this.sphericalToCartesian(geo)
+    },
+
     cartesianToSpherical: function (pos) {
       var rho = Math.sqrt(pos.x*pos.x + pos.y*pos.y + pos.z*pos.z)
-      var theta = Math.atan(pos.z/pos.x)
-      var phi = Math.acos(pos.y/rho)
+      var theta = Math.atan(pos.z/-pos.x)
+      var phi = -Math.acos(pos.y/rho)
       return new THREE.Vector2(phi, theta)
+    },
+
+    cartesianToGeographic: function (pos) {
+      var sph = this.cartesianToSpherical(pos)
+      return new THREE.Vector2(sph.x*180/Math.PI + 90, sph.y*180/Math.PI - 90)
     },
 
     changeSelectionSphere: function (start, end) {
@@ -140,8 +173,8 @@ export default {
         var theta_max = Math.max(start.x, end.x)
 
         var geometry = new THREE.SphereGeometry( 100, 8, 8, 
-          -start.y, (phi_max-phi_min) * Math.sign(start.y-end.y),
-        start.x, (theta_max-theta_min) * Math.sign(end.x-start.x))
+         start.y, (phi_max-phi_min) * Math.sign(end.y-start.y),
+         -start.x, (theta_max-theta_min) * Math.sign(start.x-end.x))
         this.sphere_region.geometry.dispose()
         this.sphere_region.geometry = geometry
     },
@@ -168,10 +201,12 @@ export default {
             this.selecting = false
             this.disableSelectionMode()
             this.coord_end = this.cartesianToSpherical(intersect)
-            if (this.coord_start.distanceTo(this.coord_end) > 0)
+            if (this.coord_start.distanceTo(this.coord_end) > 0) {
               this.changeSelectionSphere(this.coord_start, this.coord_end)
-            else
+              this.$emit('selected', this.coord_start, this.coord_end)
+            } else {
               this.resetSelectionSphere()
+            }
           }
         }
       }
@@ -179,6 +214,7 @@ export default {
 
     onDocumentMouseMove: function (event) {
       event.preventDefault()
+
       var rect = this.renderer.domElement.getBoundingClientRect();
       this.mouse.x =   ((event.clientX - rect.left) / window.innerWidth ) * 2 - 1;
       this.mouse.y = - ((event.clientY - rect.top) / window.innerHeight ) * 2 + 1;
@@ -204,10 +240,12 @@ export default {
         if (intersect) {
           this.selecting = false
           this.coord_end = this.cartesianToSpherical(intersect)
-          if (this.coord_start.distanceTo(this.coord_end) > 0)
+          if (this.coord_start.distanceTo(this.coord_end) > 0) {
             this.changeSelectionSphere(this.coord_start, this.coord_end)
-          else
+            this.$emit('selected', this.coord_start, this.coord_end)
+          } else {
             this.resetSelectionSphere()
+          }
         }
       }
     },
@@ -239,13 +277,8 @@ export default {
       var heights = [];
       for(let i = 0; i < points.length; i++) {
         var point = points[i];
-        var lat = -point[1];
-        var lon = point[0];
         var r = 100 + point[2]/1000;
-        var x = r * Math.sin((lon) * Math.PI/180) * Math.cos((lat) * Math.PI/180)
-        var y = r * Math.sin((lon) * Math.PI/180) * Math.sin((lat) * Math.PI/180)
-        var z = r * Math.cos((lon) * Math.PI/180)
-        vertices.push(new THREE.Vector3(x, y, z));
+        vertices.push(this.geographicToCartesian(new THREE.Vector3(point[1], point[0], r)));
         point_sizes.push(point[3]);
         heights.push(point[2]);
       }
