@@ -13,7 +13,6 @@
     "serverless-mysql": "^1.5.1",
     "sql-template-strings": "^2.2.2",
     "three": "^0.109.0",
-    "three-orbitcontrols": "^2.108.1",
     "vue": "^2.6.10",
     "vue-resource": "^1.5.1",
     "vuetify": "^2.1.0"

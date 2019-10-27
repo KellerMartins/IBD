@@ -1,12 +1,17 @@
 <template>
-  <div v-resize="resize" id="container"></div>
+  <div v-resize="$_map_resize" id="container"></div>
 </template>
 
 <script>
 import * as THREE from 'three'
-import OrbitControls from 'three-orbitcontrols'
 import poly2tri from 'poly2tri'
+import OrbitControls from '@/plugins/OrbitControls.js'
 import hull from '@/plugins/hull.js'
+import isMobile from '@/plugins/isMobile.js'
+
+function clamp(number, min, max) {
+  return Math.max(min, Math.min(number, max));
+}
 
 export default {
   name: 'ThreeTest',
@@ -17,122 +22,33 @@ export default {
       renderer: null,
     }
   },
-  methods: {
-    init: function() {
-      let container = document.getElementById('container')
-
-      this.camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 1200 )
-      this.camera.position.x = -194
-      this.camera.position.y = -70
-      this.camera.position.z = 151
-      this.camera.rotation = new THREE.Euler( 0.3043099695380036,
-                                             -0.860184479114381,
-                                              0.2386270538109674, 'XYZ')
-
-      this.controls = new OrbitControls(this.camera)
-      this.controls.minAzimuthAngle = -1.2505353212390744
-      this.controls.maxAzimuthAngle = -0.5880577929697266
-      this.controls.minPolarAngle = 1.514093521249383
-      this.controls.maxPolarAngle = 1.9984931877969334
-      this.controls.maxDistance = 280
-      this.controls.minDistance = 115
-      this.controls.rotateSpeed = 0.125
-      this.controls.panSpeed = 0.0
-      this.controls.zoomSpeed = 0.75
-      this.controls.screenSpacePanning = true
-
-      this.scene = new THREE.Scene()
-      this.scene.background = new THREE.Color( 0xedfcfb )
-
-      this.renderer = new THREE.WebGLRenderer({ alpha:true, antialias: true })
-      this.renderer.setPixelRatio( window.devicePixelRatio )
-      this.renderer.setSize( window.innerWidth, window.innerHeight )
-      container.parentNode.appendChild( this.renderer.domElement )
-      this.renderer.domElement.id = "mapCanvas"
-
-
-      this.raycaster = new THREE.Raycaster()
-      this.mouse = new THREE.Vector2()
-
-      this.coord_move = new THREE.Vector2()
-      this.coord_start = new THREE.Vector2()
-      this.coord_end = new THREE.Vector2()
-
-      this.intersection_sphere
-      this.selecting = false
-      this.selectionMode = false
-
-
-      var geometry = new THREE.SphereGeometry( 0.1, 4, 4)
-      var material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide, opacity:0.75, transparent:true, depthTest:false} )
-      this.sphere_region = new THREE.Mesh( geometry, material )
-      this.scene.add(this.sphere_region)
-
-      document.addEventListener('mousemove', this.onDocumentMouseMove, false)
-      document.addEventListener('mousedown', this.onDocumentMouseDown, false)
-      document.addEventListener('mouseup', this.onDocumentMouseUp, false)
-
-    },
-
-    animate: function() {
-      requestAnimationFrame(this.animate)
-      var p = this.camera.position
-      var dist = Math.sqrt(p.x*p.x + p.y*p.y + p.z*p.z)
-      var k = (dist-this.controls.minDistance) / (this.controls.maxDistance - this.controls.minDistance)
-      this.controls.rotateSpeed = k*0.16 + (1-k)*0.0125
-
-      this.controls.enabled = !this.selectionMode
-      this.selection_start_obj.visible = this.selectionMode && this.selecting
-
-      this.controls.update()
-      this.renderer.render(this.scene, this.camera)
-    },
-
-    resize: function() {
-      if (this.renderer && this.camera) {
-        if (typeof this.portrait !== 'undefined'){
-          var isMobile = (function(a){return (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino|android|ipad|playbook|silk/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw-(n|u)|c55\/|capi|ccwa|cdm-|cell|chtm|cldc|cmd-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc-s|devi|dica|dmob|do(c|p)o|ds(12|-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(-|_)|g1 u|g560|gene|gf-5|g-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd-(m|p|t)|hei-|hi(pt|ta)|hp( i|ip)|hs-c|ht(c(-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i-(20|go|ma)|i230|iac( |-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|-[a-w])|libw|lynx|m1-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|-([1-8]|c))|phil|pire|pl(ay|uc)|pn-2|po(ck|rt|se)|prox|psio|pt-g|qa-a|qc(07|12|21|32|60|-[2-7]|i-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h-|oo|p-)|sdk\/|se(c(-|0|1)|47|mc|nd|ri)|sgh-|shar|sie(-|m)|sk-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h-|v-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl-|tdg-|tel(i|m)|tim-|t-mo|to(pl|sh)|ts(70|m-|m3|m5)|tx-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas-|your|zeto|zte-/i.test(a.substr(0,4)))})(navigator.userAgent||navigator.vendor||window.opera);
-          if (isMobile && this.portrait == window.innerWidth < window.innerHeight)
-            return;
-          
-        }
-        this.portrait = (window.innerWidth < window.innerHeight)
-
-        var width = window.innerWidth
-        var height = window.innerHeight
-        this.camera.aspect = width / height
-        this.camera.updateProjectionMatrix()
-        this.renderer.setSize(width, height)
-      }
-    },
-
-
-    drawDebug: function(pos) {
-      var geometry = new THREE.SphereGeometry( 5, pos.x != 0? 8:8, 4)
-      var material = new THREE.MeshBasicMaterial( {color: 0xff0000, side: THREE.DoubleSide, opacity:0.75, transparent:true, depthTest:false} )
-      var dbg = new THREE.Mesh( geometry, material )
-      this.scene.add(dbg)
-      dbg.position = pos
-    },
-
-
-
-    toggleSelectionMode: function () {
+  methods: { 
+    //------------------------------------------// Public Methods
+    toggleSelectionMode: function() {
       if (this.selectionMode)
         this.disableSelectionMode()
       else
         this.enableSelectionMode()
+
+      this.$_map_resetSelectionSphere()
     },
 
     enableSelectionMode: function() {
       this.selectionMode = true
-      this.$emit('enabledSelection')
+      this.$emit('enabledSelectionMode')
     },
 
     disableSelectionMode: function() {
       this.selectionMode = false
       this.selecting = false
-      this.$emit('disabledSelection')
+      this.$emit('disabledSelectionMode')
+    },
+
+    clearSelection: function() {
+      this.selectionMode = false
+      this.selecting = false
+      this.$_map_resetSelectionSphere()
+      this.$emit('clearedSelection')
     },
 
 
@@ -166,32 +82,138 @@ export default {
       return new THREE.Vector2(sph.x*180/Math.PI + 90, sph.y*180/Math.PI - 90)
     },
 
-    changeSelectionSphere: function (start, end) {
-        var phi_min = Math.min(start.y, end.y)
-        var phi_max = Math.max(start.y, end.y)
-        var theta_min = Math.min(start.x, end.x)
-        var theta_max = Math.max(start.x, end.x)
+    cartesianToScreen: function (pos) {
+      var rect = this.renderer.domElement.getBoundingClientRect();
+      var width = window.innerWidth, height = window.innerHeight;
+      var widthHalf = width / 2, heightHalf = height / 2;
 
-        var geometry = new THREE.SphereGeometry( 100, 8, 8, 
-         start.y, (phi_max-phi_min) * Math.sign(end.y-start.y),
-         -start.x, (theta_max-theta_min) * Math.sign(start.x-end.x))
-        this.sphere_region.geometry.dispose()
-        this.sphere_region.geometry = geometry
-    },
+      var p = new THREE.Vector3(pos.x, pos.y, pos.z)
+      p.project(this.camera);
+      p.x = ( p.x * widthHalf ) + widthHalf + rect.left;
+      p.y = - ( p.y * heightHalf ) + heightHalf + rect.top;
 
-    resetSelectionSphere: function () {
-        var geometry = new THREE.SphereGeometry( 0.1, 4, 4)
-        this.sphere_region.geometry.dispose()
-        this.sphere_region.geometry = geometry
+      return p;
     },
 
 
+    drawDebug: function(pos) {
+      var geometry = new THREE.SphereGeometry( 5, pos.x != 0? 8:8, 4)
+      var material = new THREE.MeshBasicMaterial( {color: 0xff0000, side: THREE.DoubleSide, opacity:0.75, transparent:true, depthTest:false} )
+      var dbg = new THREE.Mesh( geometry, material )
+      this.scene.add(dbg)
+      dbg.position = pos
+    },
 
-    onDocumentMouseDown: function (event) {
+
+
+    //------------------------------------------// Private Methods
+    $_map_init: function() {
+      let container = document.getElementById('container')
+
+      this.camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 1200 )
+      this.camera.position.x = -194
+      this.camera.position.y = -70
+      this.camera.position.z = 151
+      this.camera.rotation = new THREE.Euler( 0.3043099695380036,
+                                             -0.860184479114381,
+                                              0.2386270538109674, 'XYZ')
+      this.lastCameraPosition = {x:0, y:0, z:0}
+
+      this.controls = new OrbitControls(this.camera)
+      this.controls.minAzimuthAngle = -1.2505353212390744
+      this.controls.maxAzimuthAngle = -0.5880577929697266
+      this.controls.minPolarAngle = 1.501431561249383
+      this.controls.maxPolarAngle = 2.1858312277969334
+      this.controls.maxDistance = 280
+      this.controls.minDistance = 115
+      this.controls.rotateSpeed = 0.125
+      this.controls.panSpeed = 0.0
+      this.controls.zoomSpeed = 0.75
+      this.controls.screenSpacePanning = true
+
+      this.scene = new THREE.Scene()
+      this.scene.background = new THREE.Color( 0xedfcfb )
+
+      this.renderer = new THREE.WebGLRenderer({ alpha:true, antialias: true })
+      this.renderer.setPixelRatio( window.devicePixelRatio )
+      this.renderer.setSize( window.innerWidth, window.innerHeight )
+      container.parentNode.appendChild( this.renderer.domElement )
+      this.renderer.domElement.id = "mapCanvas"
+      this.controls.domElement = this.renderer.domElement
+
+
+      this.raycaster = new THREE.Raycaster()
+      this.mouse = new THREE.Vector2()
+
+      this.coord_move = new THREE.Vector2()
+      this.coord_start = new THREE.Vector2()
+      this.coord_end = new THREE.Vector2()
+
+      this.intersection_sphere
+      this.selecting = false
+      this.selectionMode = false
+
+
+      var geometry = new THREE.SphereGeometry( 0.1, 4, 4)
+      var material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide, opacity:0.75, transparent:true, depthTest:false} )
+      this.sphere_region = new THREE.Mesh( geometry, material )
+      this.scene.add(this.sphere_region)
+
+      document.addEventListener('mousemove', this.$_map_onDocumentMouseMove, false)
+      document.addEventListener('mousedown', this.$_map_onDocumentMouseDown, false)
+      document.addEventListener('mouseup', this.$_map_onDocumentMouseUp, false)
+      this.lastMoved = Date.now();
+      this.movedEventDelay = isMobile()? 1000/15 : 1000/60;
+
+    },
+
+    $_map_animate: function() {
+      
+      requestAnimationFrame(this.$_map_animate)
+      var p = this.camera.position
+      var dist = Math.sqrt(p.x*p.x + p.y*p.y + p.z*p.z)
+      var k = (dist-this.controls.minDistance) / (this.controls.maxDistance - this.controls.minDistance)
+      this.controls.rotateSpeed = k*0.16 + (1-k)*0.0125
+
+      this.controls.enabled = !this.selectionMode
+      this.selection_start_obj.visible = this.selectionMode && this.selecting
+
+      if (Date.now() > this.lastMoved + this.movedEventDelay &&
+          (this.camera.position.x != this.lastCameraPosition.x ||
+           this.camera.position.y != this.lastCameraPosition.y ||
+           this.camera.position.z != this.lastCameraPosition.z)) {
+        this.lastCameraPosition.x = this.camera.position.x
+        this.lastCameraPosition.y = this.camera.position.y
+        this.lastCameraPosition.z = this.camera.position.z
+
+        this.$emit('moved')
+        this.lastMoved = Date.now()
+      }
+
+      this.renderer.render(this.scene, this.camera)
+    },
+
+    $_map_resize: function() {
+      if (this.renderer && this.camera) {
+        if (typeof this.portrait !== 'undefined'){
+          if (isMobile() && this.portrait == window.innerWidth < window.innerHeight)
+            return;
+        }
+        this.portrait = (window.innerWidth < window.innerHeight)
+
+        var width = window.innerWidth
+        var height = window.innerHeight
+        this.camera.aspect = width / height
+        this.camera.updateProjectionMatrix()
+        this.renderer.setSize(width, height)
+      }
+    },
+
+    $_map_onDocumentMouseDown: function (event) {
       event.preventDefault()
       if (event.button === 2 || this.selectionMode) {
 
-        var intersect = this.getMouseIntersection()
+        var intersect = this.$_map_getMouseIntersection()
         if (intersect) {
           if (!this.selecting) {
             this.coord_start = this.cartesianToSpherical(intersect)
@@ -202,17 +224,17 @@ export default {
             this.disableSelectionMode()
             this.coord_end = this.cartesianToSpherical(intersect)
             if (this.coord_start.distanceTo(this.coord_end) > 0) {
-              this.changeSelectionSphere(this.coord_start, this.coord_end)
+              this.$_map_changeSelectionSphere(this.coord_start, this.coord_end)
               this.$emit('selected', this.coord_start, this.coord_end)
             } else {
-              this.resetSelectionSphere()
+              this.clearSelection()
             }
           }
         }
       }
     },
 
-    onDocumentMouseMove: function (event) {
+    $_map_onDocumentMouseMove: function (event) {
       event.preventDefault()
 
       var rect = this.renderer.domElement.getBoundingClientRect();
@@ -220,37 +242,38 @@ export default {
       this.mouse.y = - ((event.clientY - rect.top) / window.innerHeight ) * 2 + 1;
 
       if (!this.selectionMode) {
-        var intersect = this.getMouseIntersection()
+        var intersect = this.$_map_getMouseIntersection()
         if (intersect) {
 
           if (this.selecting) {
             this.coord_move = this.cartesianToSpherical(intersect)
             if (this.coord_start.distanceTo(this.coord_move) > 0)
-              this.changeSelectionSphere(this.coord_start, this.coord_move)
+              this.$_map_changeSelectionSphere(this.coord_start, this.coord_move)
           }
         }
       }
     },
 
-    onDocumentMouseUp: function (event) {
+    $_map_onDocumentMouseUp: function (event) {
       event.preventDefault()
       if (event.button === 2 && !this.selectionMode) {
 
-        var intersect = this.getMouseIntersection()
+        var intersect = this.$_map_getMouseIntersection()
         if (intersect) {
           this.selecting = false
           this.coord_end = this.cartesianToSpherical(intersect)
           if (this.coord_start.distanceTo(this.coord_end) > 0) {
-            this.changeSelectionSphere(this.coord_start, this.coord_end)
+            this.$_map_changeSelectionSphere(this.coord_start, this.coord_end)
             this.$emit('selected', this.coord_start, this.coord_end)
           } else {
-            this.resetSelectionSphere()
+            this.clearSelection()
           }
         }
       }
     },
-    
-    getMouseIntersection: function () {
+
+
+    $_map_getMouseIntersection: function() {
       if (this.intersection_sphere) {
         this.raycaster.setFromCamera( this.mouse, this.camera )
         // calculate objects intersecting the picking ray
@@ -265,13 +288,28 @@ export default {
       return false
     },
 
+    $_map_changeSelectionSphere: function (start, end) {
+      var phi_min = Math.min(start.y, end.y)
+      var phi_max = Math.max(start.y, end.y)
+      var theta_min = Math.min(start.x, end.x)
+      var theta_max = Math.max(start.x, end.x)
 
-
-    clamp: function (number, min, max) {
-      return Math.max(min, Math.min(number, max));
+      var geometry = new THREE.SphereGeometry( 100, 8, 8, 
+        start.y, (phi_max-phi_min) * Math.sign(end.y-start.y),
+        -start.x, (theta_max-theta_min) * Math.sign(start.x-end.x))
+      this.sphere_region.geometry.dispose()
+      this.sphere_region.geometry = geometry
     },
 
-    generate_point_cloud: function (points) {
+    $_map_resetSelectionSphere: function() {
+      var geometry = new THREE.SphereGeometry( 0.1, 4, 4)
+      this.sphere_region.geometry.dispose()
+      this.sphere_region.geometry = geometry
+    },
+
+
+
+    $_map_generate_point_cloud: function (points) {
       var vertices = [];
       var point_sizes =  [];
       var heights = [];
@@ -294,7 +332,7 @@ export default {
         vertex = vertices[ i ];
         vertex.toArray( positions, i * 3 );
 
-        var t = this.clamp(heights[i]/1000, 0, 1);
+        var t = clamp(heights[i]/1000, 0, 1);
         color.setRGB((t*66  + (1-t)*181 + (t*t*t)*90 )/255, 
                       (t*237 + (1-t)*247 + (t*t*t)*237)/255, 
                       (t*109 + (1-t)*12  + (t*t*t)*210)/255);
@@ -416,26 +454,27 @@ export default {
     },
   },
   mounted() {
-    this.init()
+    this.$_map_init()
     this.$http.get('/points.json').then(data => {
       const points = data.body
-      this.generate_point_cloud(points);
-      this.animate();
+      this.$_map_generate_point_cloud(points);
+      this.$_map_animate();
       this.$emit('loadedMap')
     })
   },
 }
 </script>
 
-<style>
-#container {
-  margin: 0;
-  min-width: 100%;
-  min-height: 100%;
-  overflow:hidden;
-  position: absolute;
-}
-#mapCanvas {
-  position: absolute;
-}
+<style scoped>
+  #container {
+    margin: 0;
+    min-width: 100%;
+    min-height: 100%;
+    overflow:hidden;
+    position: absolute;
+  }
+
+  #mapCanvas {
+    position: absolute;
+  }
 </style>
