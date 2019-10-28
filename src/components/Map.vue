@@ -154,14 +154,19 @@ export default {
       this.selectionMode = false
 
 
-      var geometry = new THREE.SphereGeometry( 0.1, 4, 4)
+      var geometry = new THREE.SphereBufferGeometry( 0.1, 4, 4)
       var material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide, opacity:0.75, transparent:true, depthTest:false} )
       this.sphere_region = new THREE.Mesh( geometry, material )
       this.scene.add(this.sphere_region)
 
-      document.addEventListener('mousemove', this.$_map_onDocumentMouseMove, false)
-      document.addEventListener('mousedown', this.$_map_onDocumentMouseDown, false)
-      document.addEventListener('mouseup', this.$_map_onDocumentMouseUp, false)
+      document.addEventListener('mousemove', this.$_map_onMouseMove, false)
+      document.addEventListener('mousedown', this.$_map_onMouseDown, false)
+      document.addEventListener('mouseup', this.$_map_onMouseUp, false)
+
+      document.addEventListener('touchstart', this.$_map_onTouchDown, false );
+      document.addEventListener('touchend', this.$_map_onTouchUp, false );
+      document.addEventListener('touchmove', this.$_map_onTouchMove, false );
+
       this.lastMoved = Date.now();
       this.movedEventDelay = isMobile()? 1000/15 : 1000/60;
 
@@ -209,54 +214,20 @@ export default {
       }
     },
 
-    $_map_onDocumentMouseDown: function (event) {
-      event.preventDefault()
-      if (event.button === 2 || this.selectionMode) {
+    $_map_onSelectionDown: function() {
+      if (this.selectionMode) {
 
         var intersect = this.$_map_getMouseIntersection()
         if (intersect) {
-          if (!this.selecting) {
-            this.coord_start = this.cartesianToSpherical(intersect)
-            this.selecting = true
-            this.selection_start_obj.position = intersect;
-          } else{
-            this.selecting = false
-            this.disableSelectionMode()
-            this.coord_end = this.cartesianToSpherical(intersect)
-            if (this.coord_start.distanceTo(this.coord_end) > 0) {
-              this.$_map_changeSelectionSphere(this.coord_start, this.coord_end)
-              this.$emit('selected', this.coord_start, this.coord_end)
-            } else {
-              this.clearSelection()
-            }
-          }
+          this.coord_start = this.cartesianToSpherical(intersect)
+          this.selecting = true
+          this.selection_start_obj.position = intersect;
         }
       }
     },
 
-    $_map_onDocumentMouseMove: function (event) {
-      event.preventDefault()
-
-      var rect = this.renderer.domElement.getBoundingClientRect();
-      this.mouse.x =   ((event.clientX - rect.left) / window.innerWidth ) * 2 - 1;
-      this.mouse.y = - ((event.clientY - rect.top) / window.innerHeight ) * 2 + 1;
-
-      if (!this.selectionMode) {
-        var intersect = this.$_map_getMouseIntersection()
-        if (intersect) {
-
-          if (this.selecting) {
-            this.coord_move = this.cartesianToSpherical(intersect)
-            if (this.coord_start.distanceTo(this.coord_move) > 0)
-              this.$_map_changeSelectionSphere(this.coord_start, this.coord_move)
-          }
-        }
-      }
-    },
-
-    $_map_onDocumentMouseUp: function (event) {
-      event.preventDefault()
-      if (event.button === 2 && !this.selectionMode) {
+    $_map_onSelectionUp: function() {
+      if (this.selectionMode && this.selecting) {
 
         var intersect = this.$_map_getMouseIntersection()
         if (intersect) {
@@ -265,11 +236,68 @@ export default {
           if (this.coord_start.distanceTo(this.coord_end) > 0) {
             this.$_map_changeSelectionSphere(this.coord_start, this.coord_end)
             this.$emit('selected', this.coord_start, this.coord_end)
+            this.disableSelectionMode()
           } else {
             this.clearSelection()
+            this.selectionMode = true
           }
         }
       }
+    },
+
+    $_map_onSelectionMove: function() {
+      var intersect = this.$_map_getMouseIntersection()
+      if (intersect) {
+
+        if (this.selecting) {
+          this.coord_move = this.cartesianToSpherical(intersect)
+          if (this.coord_start.distanceTo(this.coord_move) > 0)
+            this.$_map_changeSelectionSphere(this.coord_start, this.coord_move)
+        }
+      }
+    },
+
+    // Mouse interaction
+    $_map_onMouseDown: function () {
+      event.preventDefault()
+      this.$_map_onSelectionDown()
+    },
+
+    $_map_onMouseMove: function () {
+      event.preventDefault()
+
+      var rect = this.renderer.domElement.getBoundingClientRect();
+      this.mouse.x =   ((event.clientX - rect.left) / window.innerWidth ) * 2 - 1;
+      this.mouse.y = - ((event.clientY - rect.top) / window.innerHeight ) * 2 + 1;
+
+      this.$_map_onSelectionMove()
+    },
+
+    $_map_onMouseUp: function () {
+      event.preventDefault()
+      this.$_map_onSelectionUp()
+    },
+
+
+    // Touch interaction
+    $_map_onTouchDown: function () {
+      var rect = this.renderer.domElement.getBoundingClientRect();
+      this.mouse.x =   ((event.touches[0].pageX - rect.left) / window.innerWidth ) * 2 - 1;
+      this.mouse.y = - ((event.touches[0].pageY - rect.top) / window.innerHeight ) * 2 + 1;
+
+      this.$_map_onSelectionDown()
+    },
+
+    $_map_onTouchMove: function (  ) {
+      var rect = this.renderer.domElement.getBoundingClientRect();
+      this.mouse.x =   ((event.touches[0].pageX - rect.left) / window.innerWidth ) * 2 - 1;
+      this.mouse.y = - ((event.touches[0].pageY - rect.top) / window.innerHeight ) * 2 + 1;
+
+      this.$_map_onSelectionMove()
+    },
+
+    $_map_onTouchUp: function () {
+      this.$_map_onSelectionUp()
     },
 
 
@@ -294,17 +322,15 @@ export default {
       var theta_min = Math.min(start.x, end.x)
       var theta_max = Math.max(start.x, end.x)
 
-      var geometry = new THREE.SphereGeometry( 100, 8, 8, 
+      this.sphere_region.geometry.dispose()
+      this.sphere_region.geometry = new THREE.SphereBufferGeometry( 100, 8, 4, 
         start.y, (phi_max-phi_min) * Math.sign(end.y-start.y),
         -start.x, (theta_max-theta_min) * Math.sign(start.x-end.x))
-      this.sphere_region.geometry.dispose()
-      this.sphere_region.geometry = geometry
     },
 
     $_map_resetSelectionSphere: function() {
-      var geometry = new THREE.SphereGeometry( 0.1, 4, 4)
       this.sphere_region.geometry.dispose()
-      this.sphere_region.geometry = geometry
+      this.sphere_region.geometry = new THREE.SphereBufferGeometry( 0.1, 4, 4)
     },
 
 

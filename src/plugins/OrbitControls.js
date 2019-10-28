@@ -587,7 +587,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 		if ( needsUpdate ) {
 
 			// prevent the browser from scrolling on cursor keys
-			event.preventDefault();
+			//event.preventDefault();
 
 			scope.update();
 
@@ -1055,7 +1055,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 		if ( scope.enabled === false ) return;
 
 		//event.preventDefault();
-		event.stopPropagation();
+		//event.stopPropagation();
 
 		switch ( state ) {
 
@@ -1119,7 +1119,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	}
 
-	function onContextMenu( event ) {
+	function onContextMenu( ) {
 
 		if ( scope.enabled === false ) return;
 
