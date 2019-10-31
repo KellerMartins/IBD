@@ -13,6 +13,43 @@ function clamp(number, min, max) {
   return Math.max(min, Math.min(number, max));
 }
 
+function geometryFromContour(contour) {
+  contour.pop()
+  var tris = new poly2tri.SweepContext(contour).triangulate().getTriangles();
+  var geo = new THREE.Geometry();
+
+  for (var i = 0; i < tris.length; i++) {
+    var tri = tris[i];
+    var v1, v2, v3;
+          
+    v1 = new THREE.Vector3( tri.getPoint(0).vx, tri.getPoint(0).vy, tri.getPoint(0).vz );
+    v2 = new THREE.Vector3( tri.getPoint(1).vx, tri.getPoint(1).vy, tri.getPoint(1).vz );
+    v3 = new THREE.Vector3( tri.getPoint(2).vx, tri.getPoint(2).vy, tri.getPoint(2).vz );
+    
+    geo.vertices[ geo.vertices.length ] = v1;
+    geo.vertices[ geo.vertices.length ] = v2;
+    geo.vertices[ geo.vertices.length ] = v3;
+    
+    var face = new THREE.Face3();
+    
+    face.a = geo.vertices.length - 3;
+    face.b = geo.vertices.length - 2;
+    face.c = geo.vertices.length - 1;
+    
+    geo.faces.push( face );
+    
+    geo.mergeVertices();
+  }
+  return geo;
+}
+
+function getContour(points, vecs, concavity) {
+  var temp_points = points.map((a, i) => ({index:i, x:a[1], y:a[0], vx:vecs[i].x, vy:vecs[i].y, vz:vecs[i].z}));
+  var h = hull(temp_points, concavity, ['.x', '.y']);
+  return h
+}
+
+
 export default {
   name: 'ThreeTest',
   data() {
@@ -20,6 +57,29 @@ export default {
       camera: null,
       scene: null,
       renderer: null,
+    }
+  },
+  props: {
+    groupingLevel: Number
+  },
+  watch: { 
+    groupingLevel: function(val) {
+      switch (val) {
+        case 0:
+          this.ufs_cloud.material.uniforms.opacity.value = 0.5
+          this.municipios_cloud.material.uniforms.opacity.value = 0.5
+        break;
+
+        case 1:
+          this.ufs_cloud.material.uniforms.opacity.value = 1.0
+          this.municipios_cloud.material.uniforms.opacity.value = 0.5
+        break;
+
+        case 2:
+          this.ufs_cloud.material.uniforms.opacity.value = 0.25
+          this.municipios_cloud.material.uniforms.opacity.value  = 1.0
+        break;
+      }
     }
   },
   methods: { 
@@ -181,7 +241,6 @@ export default {
       this.controls.rotateSpeed = k*0.16 + (1-k)*0.0125
 
       this.controls.enabled = !this.selectionMode
-      this.selection_start_obj.visible = this.selectionMode && this.selecting
 
       if (Date.now() > this.lastMoved + this.movedEventDelay &&
           (this.camera.position.x != this.lastCameraPosition.x ||
@@ -221,7 +280,6 @@ export default {
         if (intersect) {
           this.coord_start = this.cartesianToSpherical(intersect)
           this.selecting = true
-          this.selection_start_obj.position = intersect;
         }
       }
     },
@@ -365,7 +423,7 @@ export default {
 
         color.toArray( colors, i * 3 );
 
-        sizes[ i ] = Math.pow(point_sizes[i],1.25)*8;
+        sizes[ i ] = point_sizes[i]*8;
       }
 
       var geometry = new THREE.BufferGeometry();
@@ -377,7 +435,8 @@ export default {
       var material = new THREE.ShaderMaterial( {
         uniforms: {
           color: { value: new THREE.Color( 0xffffff ) },
-          pointTexture: { value: spriteTex }
+          pointTexture: { value: spriteTex },
+          opacity: { value: 1 }
         },
         vertexShader: `
         attribute float size;
@@ -397,39 +456,38 @@ export default {
         fragmentShader:`
         uniform vec3 color;
         uniform sampler2D pointTexture;
+        uniform float opacity;
 
         varying vec3 vColor;
         varying float fade;
 
         void main() {
           vec4 tex = texture2D(pointTexture, gl_PointCoord);
-          gl_FragColor = vec4(color * vColor * ((1.0-fade)*vec3(0.8,0.8,0.8) + fade*tex.rgb), tex.a);
+          gl_FragColor = vec4(color * vColor * ((1.0-fade)*vec3(0.8,0.8,0.8) + fade*tex.rgb), tex.a*opacity);
         }`,
         transparent: true,
         depthTest: false
       } );
 
-      var city_cloud = new THREE.Points( geometry, material );
-      this.scene.add(city_cloud);
+      return new THREE.Points( geometry, material );
+    },
 
+    $_map_generate_map_meshes: function (points) {
+      var meshes = [];
+      var vertices = [];
+      for(let i = 0; i < points.length; i++) {
+        var point = points[i];
+        var r = 100 + point[2]/1000;
+        vertices.push(this.geographicToCartesian(new THREE.Vector3(point[1], point[0], r)));
+      }
 
-
-      geometry = new THREE.BufferGeometry();
-      geometry.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array([0,0,0]), 3 ) );
-      geometry.addAttribute( 'customColor', new THREE.BufferAttribute( new Float32Array([2,2,0]), 3 ) );
-      geometry.addAttribute( 'size', new THREE.BufferAttribute( new Float32Array([100]), 1 ) );
-      this.selection_start_obj = new THREE.Points( geometry, material );
-      this.scene.add(this.selection_start_obj);
-
-
-
-      var map_contour = getContour(points, vertices);
+      var map_contour = getContour(points, vertices, 3);
       var map_outline_geo = new THREE.Geometry();
       for (let i = 0; i < map_contour.length-1; i++){
         map_outline_geo.vertices.push(new THREE.Vector3( map_contour[i].vx, map_contour[i].vy, map_contour[i].vz+0.01) );
       }
-      this.scene.add(new THREE.LineLoop(map_outline_geo, new THREE.LineBasicMaterial( { color: 0x000000, linewidth: 3 } ) ) );
-
+      
+      meshes.push(new THREE.LineLoop(map_outline_geo, new THREE.LineBasicMaterial( { color: 0x000000, linewidth: 3 } ) ) );
 
 
       var map_geo = geometryFromContour(map_contour);
@@ -437,54 +495,26 @@ export default {
         color: new THREE.Color(0xcaed72),
         side: THREE.DoubleSide,
       })
-      this.scene.add(new THREE.Mesh(map_geo, map_mat));
+      meshes.push(new THREE.Mesh(map_geo, map_mat));
 
-
-
-      function geometryFromContour( contour ){
-        contour.pop()
-        var tris = new poly2tri.SweepContext(contour).triangulate().getTriangles();
-        var geo = new THREE.Geometry();
-
-        for( var i = 0 ; i < tris.length ; i++ ){
-          
-          var tri = tris[i];
-          var v1, v2, v3;
-                
-          v1 = new THREE.Vector3( tri.getPoint(0).vx, tri.getPoint(0).vy, tri.getPoint(0).vz );
-          v2 = new THREE.Vector3( tri.getPoint(1).vx, tri.getPoint(1).vy, tri.getPoint(1).vz );
-          v3 = new THREE.Vector3( tri.getPoint(2).vx, tri.getPoint(2).vy, tri.getPoint(2).vz );
-          
-          geo.vertices[ geo.vertices.length ] = v1;
-          geo.vertices[ geo.vertices.length ] = v2;
-          geo.vertices[ geo.vertices.length ] = v3;
-          
-          var face = new THREE.Face3();
-          
-          face.a = geo.vertices.length - 3;
-          face.b = geo.vertices.length - 2;
-          face.c = geo.vertices.length - 1;
-          
-          geo.faces.push( face );
-          
-          geo.mergeVertices();
-        }
-        return geo;
-      }
-
-      function getContour( points, vecs ){
-        var temp_points = points.map((a, i) => ({index:i, x:a[1], y:a[0], vx:vecs[i].x, vy:vecs[i].y, vz:vecs[i].z}));
-        var h = hull(temp_points, 3, ['.x', '.y']);
-        return h
-      }
+      return meshes;
     },
   },
   mounted() {
     this.$_map_init()
     this.$http.get('/points.json').then(data => {
       const points = data.body
-      this.$_map_generate_point_cloud(points);
-      this.$_map_animate();
+      this.municipios_cloud = this.$_map_generate_point_cloud(points.municipios)
+      this.ufs_cloud = this.$_map_generate_point_cloud(points.ufs)
+      this.scene.add(this.municipios_cloud)
+      this.scene.add(this.ufs_cloud)
+      this.ufs_cloud.material.uniforms.opacity.value = 0.25
+
+      var map_meshes = this.$_map_generate_map_meshes(points.municipios)
+      for (let m in map_meshes)
+        this.scene.add(map_meshes[m])
+
+      this.$_map_animate()
       this.$emit('loadedMap')
     })
   },

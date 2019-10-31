@@ -133,7 +133,9 @@
         height=100%
         v-bind:loading="!loaded"
       >
+        <!-- Map -->
         <Map ref="map" 
+          :groupingLevel="dataGroupingLevel"
           v-on:loadedMap="loaded = true" 
           v-on:enabledSelectionMode="selectionMode = true"
           v-on:disabledSelectionMode="selectionMode = false"
@@ -141,6 +143,7 @@
           v-on:moved="onMapMoved"
         />
 
+        <!-- Data Card -->
         <v-card id="data"
           elevation=24
           v-if="dataWpos!=null"
@@ -151,7 +154,28 @@
             left: dataScreenX-dataW/2 + 'px',
             }"
         />
+
+        <!-- Data Grouping Selector -->
+        <v-btn-toggle id="grouping"
+          v-model="dataGroupingLevel"
+          mandatory
+          shaped
+        >
+          <v-btn>
+            <v-icon>mdi-flag</v-icon>
+            País
+          </v-btn>
+          <v-btn>
+            <v-icon>mdi-terrain</v-icon>
+            UF
+          </v-btn>
+          <v-btn>
+            <v-icon>mdi-city</v-icon>
+            Município
+          </v-btn>
+        </v-btn-toggle>
         
+        <!-- Selection Button -->
         <v-btn
           fab
           left
@@ -160,7 +184,7 @@
           :dark="!selectionMode && dataWpos == null"
           :loading="!loaded"
           :color="selectionMode || dataWpos != null ? 'yellow':'cyan'"
-          v-if="selectedQuery != null || !loaded"
+          v-if="(selectedQuery != null || !loaded) && dataGroupingLevel == 2"
           v-on:click="pressedSelect"
         >
           <v-icon v-if="dataWpos == null">mdi-selection</v-icon>
@@ -187,6 +211,7 @@
       loaded: false,
       selectionMode: false,
 
+      dataGroupingLevel: 2,
       dataWpos: null,
       dataScreenX: 0,
       dataScreenY: 0,
@@ -237,6 +262,12 @@
 
       },
     }),
+    watch: {
+      dataGroupingLevel: function() {
+        this.$refs.map.clearSelection()
+        this.dataWpos = null
+      },
+    },
     methods: {
       returnToMenu: function() {
         this.drawerScreen=''
@@ -275,7 +306,7 @@
         }
       },
 
-      onMapMoved: function(){
+      onMapMoved: function() {
         if (this.dataWpos != null) {
           var spos = this.$refs.map.cartesianToScreen(this.dataWpos)
           this.dataScreenX = spos.x
@@ -291,6 +322,7 @@
     /* Disables address bar hiding*/
     margin: 0; height: 100%; overflow: hidden
   }
+
   * {
     /* Disables pull-to-refresh*/
     overscroll-behavior: none;
@@ -303,6 +335,12 @@
   #data {
     position: absolute;
     z-index: 1;
+  }
+
+  #grouping {
+    top: 8px;
+    left: 2px;
+    position: absolute;
   }
 
   .drawer_container {
