@@ -139,6 +139,7 @@
           v-on:loadedMap="loaded = true" 
           v-on:enabledSelectionMode="selectionMode = true"
           v-on:disabledSelectionMode="selectionMode = false"
+          v-on:clearedSelection="hasSelection = false"
           v-on:selected="onSelect"
           v-on:moved="onMapMoved"
         />
@@ -146,7 +147,7 @@
         <!-- Data Card -->
         <v-card id="data"
           elevation=24
-          v-if="dataWpos!=null"
+          v-if="hasSelection"
           :width=dataW
           :height=dataH
           v-bind:style="{
@@ -174,22 +175,6 @@
             Município
           </v-btn>
         </v-btn-toggle>
-        
-        <!-- Selection Button -->
-        <v-btn
-          fab
-          left
-          fixed
-          bottom
-          :dark="!selectionMode && dataWpos == null"
-          :loading="!loaded"
-          :color="selectionMode || dataWpos != null ? 'yellow':'cyan'"
-          v-if="(selectedQuery != null || !loaded) && dataGroupingLevel == 2"
-          v-on:click="pressedSelect"
-        >
-          <v-icon v-if="dataWpos == null">mdi-selection</v-icon>
-          <v-icon v-else>mdi-close</v-icon>
-        </v-btn>
       </v-card>
     </v-content>
 
@@ -210,6 +195,7 @@
       drawer: null,
       loaded: false,
       selectionMode: false,
+      hasSelection: false,
 
       dataGroupingLevel: 2,
       dataWpos: null,
@@ -275,17 +261,6 @@
         this.$refs.map.clearSelection()
         this.dataWpos = null
       },
-      
-      pressedSelect: function() {
-        if (this.$refs.map) {
-          if (this.dataWpos == null) {
-            this.$refs.map.toggleSelectionMode()
-          } else {
-            this.$refs.map.clearSelection()
-          }
-          this.dataWpos = null
-        }
-      },
 
       onChangedQuery: function() {
         this.$refs.map.clearSelection()
@@ -295,23 +270,20 @@
         }
       },
 
-      onSelect: function(start, end) {
+      onSelect: function(pos) {
         if (this.selectedQuery!=null) {
-          var center = start.add(end).divideScalar(2)
-          var wpos = this.$refs.map.sphericalToCartesian({x:center.x, y:center.y, z:105})
-          this.dataWpos = wpos
-          this.onMapMoved()
+          this.dataScreenX = pos.x
+          this.dataScreenY = pos.y
+          this.hasSelection = true
         } else {
           this.$refs.map.clearSelection()
+          this.hasSelection = false
         }
       },
 
-      onMapMoved: function() {
-        if (this.dataWpos != null) {
-          var spos = this.$refs.map.cartesianToScreen(this.dataWpos)
-          this.dataScreenX = spos.x
-          this.dataScreenY = spos.y
-        }
+      onMapMoved: function(pos) {
+        this.dataScreenX = pos.x
+        this.dataScreenY = pos.y
       },
     },
   }

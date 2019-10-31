@@ -1,5 +1,21 @@
 <template>
-  <div v-resize="$_map_resize" id="container"></div>
+  <div v-resize="$_map_resize" id="container">
+    <!-- Selection Button -->
+    <v-btn
+      fab
+      left
+      fixed
+      bottom
+      :dark="!selectionMode && !hasSelection"
+      :loading="!loadedMap"
+      :color="selectionMode || hasSelection ? 'yellow':'cyan'"
+      v-if="(loadedMap) && groupingLevel == 2"
+      v-on:click="$_map_pressedSelect"
+    >
+      <v-icon v-if="!hasSelection">mdi-selection</v-icon>
+      <v-icon v-else>mdi-close</v-icon>
+    </v-btn>
+  </div>
 </template>
 
 <script>
@@ -57,6 +73,10 @@ export default {
       camera: null,
       scene: null,
       renderer: null,
+      loadedMap: false,
+      selecting: false,
+      hasSelection: false,
+      selectionMode: false,
     }
   },
   props: {
@@ -107,6 +127,7 @@ export default {
     clearSelection: function() {
       this.selectionMode = false
       this.selecting = false
+      this.hasSelection = false
       this.$_map_resetSelectionSphere()
       this.$emit('clearedSelection')
     },
@@ -210,9 +231,6 @@ export default {
       this.coord_end = new THREE.Vector2()
 
       this.intersection_sphere
-      this.selecting = false
-      this.selectionMode = false
-
 
       var geometry = new THREE.SphereBufferGeometry( 0.1, 4, 4)
       var material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide, opacity:0.75, transparent:true, depthTest:false} )
@@ -242,15 +260,17 @@ export default {
 
       this.controls.enabled = !this.selectionMode
 
-      if (Date.now() > this.lastMoved + this.movedEventDelay &&
+      if (this.hasSelection && Date.now() > this.lastMoved + this.movedEventDelay &&
           (this.camera.position.x != this.lastCameraPosition.x ||
            this.camera.position.y != this.lastCameraPosition.y ||
            this.camera.position.z != this.lastCameraPosition.z)) {
         this.lastCameraPosition.x = this.camera.position.x
         this.lastCameraPosition.y = this.camera.position.y
         this.lastCameraPosition.z = this.camera.position.z
-
-        this.$emit('moved')
+        
+        var wpos = this.sphericalToCartesian({x:this.coord_center.x, y:this.coord_center.y, z:105})
+        var pos = this.cartesianToScreen(wpos)
+        this.$emit('moved', pos)
         this.lastMoved = Date.now()
       }
 
@@ -273,6 +293,15 @@ export default {
       }
     },
 
+    $_map_pressedSelect: function() {
+        if (!this.hasSelection) {
+          this.toggleSelectionMode()
+        } else {
+          this.clearSelection()
+        }
+        this.hasSelection = false
+    },
+
     $_map_onSelectionDown: function() {
       if (this.selectionMode) {
 
@@ -292,8 +321,14 @@ export default {
           this.selecting = false
           this.coord_end = this.cartesianToSpherical(intersect)
           if (this.coord_start.distanceTo(this.coord_end) > 0) {
+            this.hasSelection = true
             this.$_map_changeSelectionSphere(this.coord_start, this.coord_end)
-            this.$emit('selected', this.coord_start, this.coord_end)
+
+            this.coord_center = this.coord_start.add(this.coord_end).divideScalar(2)
+            var wpos = this.sphericalToCartesian({x:this.coord_center.x, y:this.coord_center.y, z:105})
+            var pos = this.cartesianToScreen(wpos)
+
+            this.$emit('selected', pos, this.coord_start, this.coord_end)
             this.disableSelectionMode()
           } else {
             this.clearSelection()
@@ -515,6 +550,7 @@ export default {
         this.scene.add(map_meshes[m])
 
       this.$_map_animate()
+      this.loadedMap = true
       this.$emit('loadedMap')
     })
   },
