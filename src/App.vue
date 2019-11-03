@@ -136,6 +136,7 @@
         <!-- Map -->
         <Map ref="map" 
           :groupingLevel="dataGroupingLevel"
+          :colormap="selectedQuery!=null? 'summer' : ''"
           v-on:loadedMap="loaded = true" 
           v-on:enabledSelectionMode="selectionMode = true"
           v-on:disabledSelectionMode="selectionMode = false"

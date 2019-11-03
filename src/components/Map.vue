@@ -1,5 +1,18 @@
 <template>
   <div v-resize="$_map_resize" id="container">
+      <div id="colormap" v-if="colormap">
+        <div style="margin-bottom: 20px;">
+          <p class="label">Altitude</p>
+        </div>
+        <v-sheet width=100% height=33%>
+          <img :src="'/textures/' + colormap + '.png'" style="width: 100%; height: 100%;">
+        </v-sheet>
+        <div style="margin-bottom: 20px">
+          <p class="label" style="left: 0">0%</p>
+          <p class="label" style="left: 47%">50%</p>
+          <p class="label" style="right: 0">100%</p>
+        </div>
+    </div>
     <!-- Selection Button -->
     <v-btn
       fab
@@ -80,7 +93,11 @@ export default {
     }
   },
   props: {
-    groupingLevel: Number
+    groupingLevel: Number,
+    colormap: {
+      type: String,
+      default: ""
+    }
   },
   watch: { 
     groupingLevel: function(val) {
@@ -100,7 +117,16 @@ export default {
           this.municipios_cloud.material.uniforms.opacity.value  = 1.0
         break;
       }
-    }
+    },
+    colormap: function(val) {
+      var tex = val
+      if (val == "")
+        tex = "default"
+      
+      var colormapTex = new THREE.TextureLoader().load("/textures/" + tex + ".png")
+      this.ufs_cloud.material.uniforms.colormap.value = colormapTex
+      this.municipios_cloud.material.uniforms.colormap.value = colormapTex
+    },
   },
   methods: { 
     //------------------------------------------// Public Methods
@@ -233,7 +259,7 @@ export default {
       this.intersection_sphere
 
       var geometry = new THREE.SphereBufferGeometry( 0.1, 4, 4)
-      var material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide, opacity:0.75, transparent:true, depthTest:false} )
+      var material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide, opacity:1.0, transparent:true, depthTest:false} )
       this.sphere_region = new THREE.Mesh( geometry, material )
       this.scene.add(this.sphere_region)
 
@@ -441,47 +467,41 @@ export default {
       }
 
       var positions = new Float32Array( vertices.length * 3 );
-      var colors = new Float32Array( vertices.length * 3 );
+      var values = new Float32Array( vertices.length);
       var sizes = new Float32Array( vertices.length );
 
       var vertex;
-      var color = new THREE.Color();
 
       for (let i = 0, l = vertices.length; i < l; i++) {
         vertex = vertices[ i ];
         vertex.toArray( positions, i * 3 );
 
-        var t = clamp(heights[i]/1000, 0, 1);
-        color.setRGB((t*66  + (1-t)*181 + (t*t*t)*90 )/255, 
-                      (t*237 + (1-t)*247 + (t*t*t)*237)/255, 
-                      (t*109 + (1-t)*12  + (t*t*t)*210)/255);
-
-        color.toArray( colors, i * 3 );
-
+        values[i] = clamp(heights[i]/1000, 0, 1);
         sizes[ i ] = point_sizes[i]*8;
       }
 
       var geometry = new THREE.BufferGeometry();
-      geometry.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
-      geometry.addAttribute( 'customColor', new THREE.BufferAttribute( colors, 3 ) );
-      geometry.addAttribute( 'size', new THREE.BufferAttribute( sizes, 1 ) );
+      geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.addAttribute('value', new THREE.BufferAttribute(values, 1));
+      geometry.addAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
-      var spriteTex = new THREE.TextureLoader().load("/disc.png");
+      var spriteTex = new THREE.TextureLoader().load("/textures/disc.png");
+      var colormapTex = new THREE.TextureLoader().load("/textures/default.png");
       var material = new THREE.ShaderMaterial( {
         uniforms: {
-          color: { value: new THREE.Color( 0xffffff ) },
-          pointTexture: { value: spriteTex },
+          sprite: { value: spriteTex },
+          colormap: { value: colormapTex},
           opacity: { value: 1 }
         },
         vertexShader: `
         attribute float size;
-        attribute vec3 customColor;
+        attribute float value;
 
-        varying vec3 vColor;
+        varying float t;
         varying float fade;
 
         void main() {
-            vColor = customColor;
+            t = value;
             vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 
             fade = clamp(( 30.0 / -mvPosition.z ), 0.0, 1.0);
@@ -489,16 +509,17 @@ export default {
             gl_Position = projectionMatrix * mvPosition;
         }`,
         fragmentShader:`
-        uniform vec3 color;
-        uniform sampler2D pointTexture;
+        uniform sampler2D colormap;
+        uniform sampler2D sprite;
         uniform float opacity;
 
-        varying vec3 vColor;
+        varying float t;
         varying float fade;
 
         void main() {
-          vec4 tex = texture2D(pointTexture, gl_PointCoord);
-          gl_FragColor = vec4(color * vColor * ((1.0-fade)*vec3(0.8,0.8,0.8) + fade*tex.rgb), tex.a*opacity);
+          vec4 tex = texture2D(sprite, gl_PointCoord);
+          vec3 color = texture2D(colormap, vec2(t, 0.5)).xyz;
+          gl_FragColor = vec4(color * ((1.0-fade)*vec3(0.99,0.99,0.99) + fade*tex.rgb), tex.a*opacity);
         }`,
         transparent: true,
         depthTest: false
@@ -568,5 +589,20 @@ export default {
 
   #mapCanvas {
     position: absolute;
+  }
+
+  #colormap {
+    width:50%; 
+    height:60px;
+    position: absolute;
+    bottom: 74px;
+    right: 1.5%;
+  }
+
+  .label {
+    position: absolute;
+    font-size: small;
+    color: black;
+    text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;
   }
 </style>
