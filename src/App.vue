@@ -108,8 +108,8 @@
     }),
     watch: {
       dataGroupingLevel: function() {
-        //this.$refs.map.clearSelection()
-        //this.dataWpos = null
+        this.$refs.map.clearSelection()
+        this.dataWpos = null
       },
     },
     methods: {
