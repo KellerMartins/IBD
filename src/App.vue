@@ -1,133 +1,31 @@
 <template>
   <v-app id="inspire">
-    <v-navigation-drawer
-      v-model="drawer"
-      app
-      right
-      touchless
-    >
-    <div class="drawer_container">
-      <!-- Main menu -->
-      <v-fade-transition>
-        <v-sheet  v-show="drawerScreen == ''">
-          <div class="pa-2">
-            <v-list-item>
-              <v-list-item-content>
-                <v-list-item-title class="title">
-                  Visualizador IBGE
-                </v-list-item-title>
-                <v-list-item-subtitle>
-                  Trabalho final - IBD - 2019/2
-                </v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
-          </div>
+    <!-- Drawer -->
+    <Drawer ref="drawer"
 
-          <v-divider></v-divider>
-          
-          <v-subheader>Categorias</v-subheader>
-          <v-list dense>
-            <v-list-item link @click.stop="drawerScreen = 'population'">
-              <v-list-item-action>
-                <v-icon x-large>mdi-account-group</v-icon>
-              </v-list-item-action>
-              <v-list-item-content>
-                <v-list-item-title>População</v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-            <v-list-item link @click.stop="drawerScreen = 'economy'">
-              <v-list-item-action>
-                <v-icon x-large>mdi-currency-usd</v-icon>
-              </v-list-item-action>
-              <v-list-item-content>
-                <v-list-item-title>Economia</v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-            <v-list-item link @click.stop="drawerScreen = 'country'">
-              <v-list-item-action>
-                <v-icon x-large>mdi-flag</v-icon>
-              </v-list-item-action>
-              <v-list-item-content>
-                <v-list-item-title>País</v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-          </v-list>
+      :enabled="drawer"
+      v-on:changedQuery="onChangedQuery"
+      v-on:returnedToMenu="onReturnToMenu"
+      v-on:opened="drawer=true"
+      v-on:closed="drawer=false"
+    />
 
-          <v-divider></v-divider>
-          <v-list dense>
-            <v-list-item link @click.stop="drawerScreen = 'about'">
-              <v-list-item-action>
-                <v-icon x-large>mdi-information</v-icon>
-              </v-list-item-action>
-              <v-list-item-content>
-                <v-list-item-title>Sobre</v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-          </v-list>
-        </v-sheet>
-      </v-fade-transition>
-
-      <!-- Queries submenu -->
-      <v-slide-x-transition >
-        <v-sheet v-if="Object.keys(queryGroups).includes(drawerScreen)">
-          <v-list-item>
-            <v-list-item-content>
-              <v-list-item-title class="title">
-                <v-btn text icon @click.stop="returnToMenu">
-                <v-icon>mdi-arrow-left</v-icon>
-              </v-btn>
-
-              {{queryGroups[drawerScreen].title}}
-
-              </v-list-item-title>
-              
-            </v-list-item-content>
-          </v-list-item>
-
-          <v-divider></v-divider>
-      
-          <v-list-item-group 
-            v-model="selectedQuery"
-            v-on:change="onChangedQuery"
-          >
-            <v-list-item 
-              link 
-              v-for="(item, i) in queryGroups[drawerScreen].queries"  
-              v-bind:key="item.title" 
-              :style="selectedQuery==String(i) ?  { 'background': '#00bcd4', 'color':'white' } : { 'background': '', 'color':'' }"
-            >
-              <v-list-item-action>
-                <v-icon :dark="selectedQuery==String(i)">{{item.icon}}</v-icon>
-              </v-list-item-action>
-              <v-list-item-content>
-                <v-list-item-title>{{item.title}}</v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-          </v-list-item-group>
-            
-          <v-divider></v-divider>
-        </v-sheet>
-      </v-slide-x-transition>
-    </div>
-    </v-navigation-drawer>
-
+    <!-- Top bar -->
     <v-app-bar
       app
       color="cyan"
       dark
     >
-      
-
       <img src="@/assets/ibge.png" style="height: inherit;">
       <v-spacer></v-spacer>
       <v-toolbar-title v-if="selectionMode" id="title">Selecione uma área</v-toolbar-title>
-      <v-toolbar-title v-else-if="selectedQuery!=null" id="title">{{queryGroups[drawerScreen].queries[selectedQuery].title}}</v-toolbar-title>
+      <v-toolbar-title v-else-if="selectedQuery!=null && selectedQuery.id!=null" id="title">{{selectedQuery.title}}</v-toolbar-title>
       <v-toolbar-title v-else id="title"></v-toolbar-title>
       <v-spacer></v-spacer>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
     </v-app-bar>
 
-    
+    <!-- Content -->
     <v-content>
       <v-card id="create"
         height=100%
@@ -136,7 +34,7 @@
         <!-- Map -->
         <Map ref="map" 
           :groupingLevel="dataGroupingLevel"
-          :colormap="selectedQuery!=null? 'summer' : ''"
+          :colormap="selectedQuery!=null && selectedQuery.id!=null? 'summer' : ''"
           v-on:loadedMap="loaded = true" 
           v-on:enabledSelectionMode="selectionMode = true"
           v-on:disabledSelectionMode="selectionMode = false"
@@ -178,25 +76,28 @@
         </v-btn-toggle>
       </v-card>
     </v-content>
-
   </v-app>
 </template>
 
 <script>
   import isMobile from '@/plugins/isMobile.js'
+  import Drawer from './components/Drawer';
   import Map from './components/Map';
+
   export default {
     components: {
       Map,
+      Drawer,
     },
     props: {
       source: String,
     },
     data: () => ({
-      drawer: null,
+      drawer: false,
       loaded: false,
       selectionMode: false,
       hasSelection: false,
+      selectedQuery: null,
 
       dataGroupingLevel: 2,
       dataWpos: null,
@@ -204,70 +105,26 @@
       dataScreenY: 0,
       dataW: 100,
       dataH: 100,
-
-      drawerScreen: '',
-      selectedQuery: null,
-      queryGroups: {
-        "population": {
-          title: "População",
-          queries: [
-          {title: "Gênero",       icon: "mdi-gender-male-female"},
-          {title: "Renda",        icon: "mdi-cash-multiple"},
-          {title: "Emprego",      icon: "mdi-worker"},
-          {title: "Moradia",      icon: "mdi-home"},
-          {title: "Saneamento Básico",icon: "mdi-paper-roll"},
-          {title: "Escolaridade", icon: "mdi-school"},
-          {title: "Natalidade",   icon: "mdi-baby-carriage"},
-          ],
-        },
-
-        "economy": {
-          title: "Economia",
-          queries: [
-          {title: "Gênero",       icon: "mdi-gender-male-female"},
-          {title: "Renda",        icon: "mdi-cash-multiple"},
-          {title: "Emprego",      icon: "mdi-worker"},
-          {title: "Moradia",      icon: "mdi-home"},
-          {title: "Saneamento Básico",icon: "mdi-paper-roll"},
-          {title: "Escolaridade", icon: "mdi-school"},
-          {title: "Natalidade",   icon: "mdi-baby-carriage"},
-          ],
-        },
-
-        "country": {
-          title: "País",
-          queries: [
-          {title: "Gênero",       icon: "mdi-gender-male-female"},
-          {title: "Renda",        icon: "mdi-cash-multiple"},
-          {title: "Emprego",      icon: "mdi-worker"},
-          {title: "Moradia",      icon: "mdi-home"},
-          {title: "Saneamento Básico",icon: "mdi-paper-roll"},
-          {title: "Escolaridade", icon: "mdi-school"},
-          {title: "Natalidade",   icon: "mdi-baby-carriage"},
-          ],
-        }
-
-      },
     }),
     watch: {
       dataGroupingLevel: function() {
-        this.$refs.map.clearSelection()
-        this.dataWpos = null
+        //this.$refs.map.clearSelection()
+        //this.dataWpos = null
       },
     },
     methods: {
-      returnToMenu: function() {
-        this.drawerScreen=''
-        this.selectedQuery=null
+      onReturnToMenu: function() {
         this.$refs.map.clearSelection()
         this.dataWpos = null
+        this.selectedQuery = null
       },
 
-      onChangedQuery: function() {
+      onChangedQuery: function(query) {
+        this.selectedQuery = query
         this.$refs.map.clearSelection()
         this.dataWpos = null
         if (isMobile()) {
-          this.drawer = false;
+          this.drawer = false
         }
       },
 
