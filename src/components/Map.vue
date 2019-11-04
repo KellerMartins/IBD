@@ -123,9 +123,12 @@ export default {
       if (val == "")
         tex = "default"
       
-      var colormapTex = new THREE.TextureLoader().load("/textures/" + tex + ".png")
-      this.ufs_cloud.material.uniforms.colormap.value = colormapTex
-      this.municipios_cloud.material.uniforms.colormap.value = colormapTex
+      new THREE.TextureLoader().load("/textures/" + tex + ".png",
+        function (texture) {
+          this.ufs_cloud.material.uniforms.colormap.value = texture
+          this.municipios_cloud.material.uniforms.colormap.value = texture
+        }.bind(this))
+
     },
   },
   methods: { 
