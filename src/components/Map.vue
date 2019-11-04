@@ -80,7 +80,7 @@ function getContour(points, vecs, concavity) {
 
 
 export default {
-  name: 'ThreeTest',
+  name: 'Map',
   data() {
     return {
       camera: null,
@@ -592,7 +592,7 @@ export default {
   }
 
   #colormap {
-    width:50%; 
+    max-width:50%; 
     height:60px;
     position: absolute;
     bottom: 74px;
