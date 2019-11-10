@@ -93,7 +93,7 @@
       source: String,
     },
     data: () => ({
-      drawer: false,
+      drawer: null,
       loaded: false,
       selectionMode: false,
       hasSelection: false,
