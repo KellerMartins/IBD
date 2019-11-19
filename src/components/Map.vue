@@ -561,22 +561,29 @@ export default {
   },
   mounted() {
     this.$_map_init()
-    this.$http.get('/points.json').then(data => {
-      const points = data.body
-      this.municipios_cloud = this.$_map_generate_point_cloud(points.municipios)
-      this.ufs_cloud = this.$_map_generate_point_cloud(points.ufs)
-      this.scene.add(this.municipios_cloud)
-      this.scene.add(this.ufs_cloud)
-      this.ufs_cloud.material.uniforms.opacity.value = 0.25
+    this.$http.get('/api/municipios/coordenadas')
+      .then(response => { return response.json() })
+      .then(points =>{
+        this.municipios_cloud = this.$_map_generate_point_cloud(points.municipios)
+        this.scene.add(this.municipios_cloud)
+        
+        var map_meshes = this.$_map_generate_map_meshes(points.municipios)
+        for (let m in map_meshes)
+          this.scene.add(map_meshes[m])
+      })
+      .then(() =>{
+        this.$http.get('/api/uf/coordenadas')
+          .then(response => { return response.json() })
+          .then(points =>{
+            this.ufs_cloud = this.$_map_generate_point_cloud(points.ufs)
+            this.scene.add(this.ufs_cloud)
+            this.ufs_cloud.material.uniforms.opacity.value = 0.25
 
-      var map_meshes = this.$_map_generate_map_meshes(points.municipios)
-      for (let m in map_meshes)
-        this.scene.add(map_meshes[m])
-
-      this.$_map_animate()
-      this.loadedMap = true
-      this.$emit('loadedMap')
-    })
+            this.$_map_animate()
+            this.loadedMap = true
+            this.$emit('loadedMap')
+          })
+      })
   },
 }
 </script>
