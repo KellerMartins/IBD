@@ -1,5 +1,11 @@
-const db = require('../../lib/db')
+const db = require('../../../lib/db')
 const escape = require('sql-template-strings')
+
+// Exemplo de api
+// acessada como /api/profiles?page=NUMPAGINA&limit=NUMPORPAGINA
+// Aqui, page e limit são opcionais
+// Nesse exemplo, query.page e query.limit vem da query string '?page=...&limit=...'
+// A resposta dada aqui é um json da lista retornada pelo banco e as informacoes da pagina acessada
 
 module.exports = async (req, res) => {
   let page = parseInt(req.query.page) || 1
@@ -16,7 +22,8 @@ module.exports = async (req, res) => {
       AS profilesCount
       FROM profiles
     `)
-  const { profilesCount } = count[0]
+
+  const profilesCount  = count[0].profilesCount
   const pageCount = Math.ceil(profilesCount / limit)
-  res.status(200).json({ profiles, pageCount, page })
+  res.status(200).json({ profiles, pageCount, page})
 }
