@@ -561,7 +561,7 @@ export default {
   },
   mounted() {
     this.$_map_init()
-    this.$http.get('/api/municipios/coordenadas')
+    this.$http.get('/api/coordenadas/municipios')
       .then(response => { return response.json() })
       .then(points =>{
         this.municipios_cloud = this.$_map_generate_point_cloud(points.municipios)
@@ -572,7 +572,7 @@ export default {
           this.scene.add(map_meshes[m])
       })
       .then(() =>{
-        this.$http.get('/api/uf/coordenadas')
+        this.$http.get('/api/coordenadas/ufs')
           .then(response => { return response.json() })
           .then(points =>{
             this.ufs_cloud = this.$_map_generate_point_cloud(points.ufs)
