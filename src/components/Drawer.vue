@@ -1,6 +1,7 @@
 <template>
   <v-navigation-drawer
-      v-model="enabled"
+      :value="enabled"
+      @input="v => $emit('update:enabled', v)"
       app
       right
       touchless
@@ -169,6 +170,7 @@ export default {
       if (typeof this.selectedQuery !== 'undefined') {
         let queryTitle = this.queryGroups[this.drawerScreen].queries[this.selectedQuery].title
         this.$emit('changedQuery', {title:queryTitle, id:this.selectedQuery, group:this.drawerScreen})
+        this.$emit('update:enabled', null);
       } else {
         this.$emit('changedQuery', {title:null, id:null, group:null})
       }
@@ -179,11 +181,6 @@ export default {
       this.$emit('returnedToMenu')
     },
   },
-  watch: {
-    enabled: function(val) {
-      this.$emit(val? 'opened' : 'closed')
-    }
-  }
 }
 </script>
 

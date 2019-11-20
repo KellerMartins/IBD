@@ -2,12 +2,9 @@
   <v-app id="inspire">
     <!-- Drawer -->
     <Drawer ref="drawer"
-
-      :enabled="drawer"
+      :enabled.sync="drawer"
       v-on:changedQuery="onChangedQuery"
       v-on:returnedToMenu="onReturnToMenu"
-      v-on:opened="drawer=true"
-      v-on:closed="drawer=false"
     />
 
     <!-- Top bar -->
@@ -76,7 +73,6 @@
 </template>
 
 <script>
-  import isMobile from '@/plugins/isMobile.js'
   import DataCard from './components/DataCard';
   import Drawer from './components/Drawer';
   import Map from './components/Map';
@@ -120,9 +116,6 @@
         this.selectedQuery = query
         this.$refs.map.clearSelection()
         this.dataWpos = null
-        if (isMobile()) {
-          this.drawer = false
-        }
       },
 
       onSelect: function(pos) {
