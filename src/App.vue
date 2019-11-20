@@ -44,15 +44,11 @@
         />
 
         <!-- Data Card -->
-        <v-card id="data"
-          elevation=24
-          v-if="hasSelection"
-          :width=dataW
-          :height=dataH
-          v-bind:style="{
-            top: dataScreenY-dataH + 'px', 
-            left: dataScreenX-dataW/2 + 'px',
-            }"
+        <DataCard
+          :show="hasSelection"
+          :zoom="dataZoom"
+          :x="dataScreenX"
+          :y="dataScreenY"
         />
 
         <!-- Data Grouping Selector -->
@@ -81,6 +77,7 @@
 
 <script>
   import isMobile from '@/plugins/isMobile.js'
+  import DataCard from './components/DataCard';
   import Drawer from './components/Drawer';
   import Map from './components/Map';
 
@@ -88,6 +85,7 @@
     components: {
       Map,
       Drawer,
+      DataCard,
     },
     props: {
       source: String,
@@ -103,8 +101,7 @@
       dataWpos: null,
       dataScreenX: 0,
       dataScreenY: 0,
-      dataW: 100,
-      dataH: 100,
+      dataZoom: 1,
     }),
     watch: {
       dataGroupingLevel: function() {
@@ -139,9 +136,10 @@
         }
       },
 
-      onMapMoved: function(pos) {
+      onMapMoved: function(pos, zoom) {
         this.dataScreenX = pos.x
         this.dataScreenY = pos.y
+        this.dataZoom = zoom
       },
     },
   }
@@ -160,11 +158,6 @@
 
   #title {
     font-weight:bold;
-  }
-
-  #data {
-    position: absolute;
-    z-index: 1;
   }
 
   #grouping {

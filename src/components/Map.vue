@@ -299,7 +299,7 @@ export default {
         
         var wpos = this.sphericalToCartesian({x:this.coord_center.x, y:this.coord_center.y, z:105})
         var pos = this.cartesianToScreen(wpos)
-        this.$emit('moved', pos)
+        this.$emit('moved', pos, k)
         this.lastMoved = Date.now()
       }
 

@@ -13,6 +13,6 @@ module.exports = async (req, res) => {
       ORDER BY cod_uf
     `)
 
-  var ufs = coords.map((o) => [o.longitude, o.latitude, o.altitude, Math.min(o.tamanho*10, 100)])
+  var ufs = coords.map((o) => [o.longitude, o.latitude, o.altitude, Math.min(o.tamanho*10, 75)])
   res.status(200).json({ ufs })
 }
