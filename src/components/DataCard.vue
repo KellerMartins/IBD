@@ -9,7 +9,8 @@
         left: x-width/2 + 'px',
         }"
     >
-      <apexchart :width="width" type="donut" :options="options" :series="series"></apexchart>
+      <h3>{{title}}</h3>
+      <apexchart :height="270+'px'" type="donut" :options="options" :series="series"></apexchart>
     </v-card>
 </template>
 
@@ -17,25 +18,19 @@
 export default {
   name: 'DataCard',
   props: {
-    show: {
-      type: Boolean,
-      default: false
-    },
-    x: {
-      type: Number,
-      default: null
-    },
-    y: {
-      type: Number,
-      default: null
-    },
+    queryList: Array,
+    query: String,
+    at: String,
+    show: Boolean,
+    x: Number,
+    y: Number,
     width: {
       type: Number,
-      default: 275
+      default: 240
     },
     height: {
       type: Number,
-      default: 170
+      default: 252
     },
     zoom: {
       type: Number,
@@ -43,15 +38,16 @@ export default {
     },
   },
   data:  () => ({
+    title: "Some long title to test",
     options: {
       tooltip: { enabled: false },
       dataLabels: { style: { fontSize: '10px' } },
+      legend: { position: 'bottom',horizontalAlign: 'center'},
       plotOptions: {
         pie: {
-          size: 70,
           customScale: 1,
-          offsetX: 5,
-          offsetY: 20,
+          offsetX: 0,
+          offsetY: 0,
           donut: {
             size: '55%',
             labels: {
@@ -70,6 +66,26 @@ export default {
     },
     series: [44000, 55000, 41000, 17000, 15000, 12000]
   }),
+  methods:{
+    get_data() {
+      console.log('/api/'+this.at+'/'+this.query)
+      /*this.$http.get('/api/'+at+'/'+this.query)
+        .then(response => response.json())
+        .then(json =>{
+          
+        })*/
+    }
+  },
+  watch: {
+    query() {
+      if (this.queryList.map(q => q.id).includes(this.query) && this.at != null)
+        this.get_data();
+    },
+    at() {
+      if (this.queryList.map(q => q.id).includes(this.query) && this.at != null)
+        this.get_data();
+    },
+  },
 }
 </script>
 
@@ -80,5 +96,8 @@ export default {
     margin-left: auto;
     margin-right: auto;
     z-index: 1;
+  }
+  h3 {
+    text-align: center;
   }
 </style>

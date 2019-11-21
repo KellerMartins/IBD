@@ -23,7 +23,7 @@
       :loading="!loadedMap"
       :color="selectionMode || hasSelection ? 'yellow':'cyan'"
       v-if="(loadedMap) && groupingLevel == 2"
-      v-on:click="$_map_pressedSelect"
+      @click="$_map_pressedSelect"
     >
       <v-icon v-if="!hasSelection">mdi-selection</v-icon>
       <v-icon v-else>mdi-close</v-icon>
@@ -73,7 +73,7 @@ function geometryFromContour(contour) {
 }
 
 function getContour(points, vecs, concavity) {
-  var temp_points = points.map((a, i) => ({index:i, x:a[1], y:a[0], vx:vecs[i].x, vy:vecs[i].y, vz:vecs[i].z}));
+  var temp_points = points.map((a, i) => ({index:i, x:a.latitude, y:a.longitude, vx:vecs[i].x, vy:vecs[i].y, vz:vecs[i].z}));
   var h = hull(temp_points, concavity, ['.x', '.y']);
   return h
 }
@@ -105,16 +105,21 @@ export default {
         case 0:
           this.ufs_cloud.material.uniforms.opacity.value = 0.5
           this.municipios_cloud.material.uniforms.opacity.value = 0.5
+          this.hasSelection = true
+
+          this.$emit('selectedCountry', this.$_map_selectCountry())
         break;
 
         case 1:
           this.ufs_cloud.material.uniforms.opacity.value = 1.0
           this.municipios_cloud.material.uniforms.opacity.value = 0.5
+          this.hasSelection = false
         break;
 
         case 2:
           this.ufs_cloud.material.uniforms.opacity.value = 0.25
           this.municipios_cloud.material.uniforms.opacity.value  = 1.0
+          this.hasSelection = false
         break;
       }
     },
@@ -163,7 +168,19 @@ export default {
 
 
     //TODO: Figure out a correct conversion between coordinate systems
-    sphericalToCartesian: function (pos) {
+    geographicToSpherical: function(pos){
+      return new THREE.Vector3((pos.x-90)*Math.PI/180, 
+                               (pos.y+90)*Math.PI/180, 
+                               pos.hasOwnProperty('z')? pos.z : 100);
+    },
+
+    sphericalToGeographic: function(pos){
+      return new THREE.Vector3((pos.x*180/Math.PI) + 90, 
+                               (pos.y*180/Math.PI) - 90, 
+                               pos.hasOwnProperty('z')? pos.z : 100);
+    },
+
+    sphericalToCartesian(pos) {
       var phi = -pos.x;
       var theta = pos.y;
       var r = pos.hasOwnProperty('z')? pos.z : 100;
@@ -173,26 +190,23 @@ export default {
       return new THREE.Vector3(-x, y, z)
     },
 
-    geographicToCartesian: function (pos) {
-      var geo = new THREE.Vector3((pos.x-90)*Math.PI/180, 
-                                  (pos.y+90)*Math.PI/180, 
-                                  pos.hasOwnProperty('z')? pos.z : 100);
-      return this.sphericalToCartesian(geo)
+    geographicToCartesian(pos) {
+      return this.sphericalToCartesian(this.geographicToSpherical(pos))
     },
 
-    cartesianToSpherical: function (pos) {
+    cartesianToSpherical(pos) {
       var rho = Math.sqrt(pos.x*pos.x + pos.y*pos.y + pos.z*pos.z)
       var theta = Math.atan(pos.z/-pos.x)
       var phi = -Math.acos(pos.y/rho)
       return new THREE.Vector2(phi, theta)
     },
 
-    cartesianToGeographic: function (pos) {
+    cartesianToGeographic(pos) {
       var sph = this.cartesianToSpherical(pos)
       return new THREE.Vector2(sph.x*180/Math.PI + 90, sph.y*180/Math.PI - 90)
     },
 
-    cartesianToScreen: function (pos) {
+    cartesianToScreen(pos) {
       var rect = this.renderer.domElement.getBoundingClientRect();
       var width = window.innerWidth, height = window.innerHeight;
       var widthHalf = width / 2, heightHalf = height / 2;
@@ -251,15 +265,16 @@ export default {
       this.renderer.domElement.id = "mapCanvas"
       this.controls.domElement = this.renderer.domElement
 
-
-      this.raycaster = new THREE.Raycaster()
+      this.moved = false;
       this.mouse = new THREE.Vector2()
+      this.raycaster = new THREE.Raycaster()
+      this.raycaster.params.Points.threshold = 2
 
       this.coord_move = new THREE.Vector2()
       this.coord_start = new THREE.Vector2()
       this.coord_end = new THREE.Vector2()
 
-      this.intersection_sphere
+      this.intersection_sphere = null;
 
       var geometry = new THREE.SphereBufferGeometry( 0.1, 4, 4)
       var material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide, opacity:1.0, transparent:true, depthTest:false} )
@@ -289,7 +304,7 @@ export default {
 
       this.controls.enabled = !this.selectionMode
 
-      if (this.hasSelection && Date.now() > this.lastMoved + this.movedEventDelay &&
+      if (this.hasSelection && Date.now() > this.lastMoved + this.movedEventDelay&&
           (this.camera.position.x != this.lastCameraPosition.x ||
            this.camera.position.y != this.lastCameraPosition.y ||
            this.camera.position.z != this.lastCameraPosition.z)) {
@@ -297,9 +312,10 @@ export default {
         this.lastCameraPosition.y = this.camera.position.y
         this.lastCameraPosition.z = this.camera.position.z
         
-        var wpos = this.sphericalToCartesian({x:this.coord_center.x, y:this.coord_center.y, z:105})
+        var wpos = this.sphericalToCartesian(this.coord_center)
         var pos = this.cartesianToScreen(wpos)
         this.$emit('moved', pos, k)
+        this.moved = true
         this.lastMoved = Date.now()
       }
 
@@ -332,6 +348,7 @@ export default {
     },
 
     $_map_onSelectionDown: function() {
+      this.moved = false
       if (this.selectionMode) {
 
         var intersect = this.$_map_getMouseIntersection()
@@ -342,7 +359,7 @@ export default {
       }
     },
 
-    $_map_onSelectionUp: function() {
+    $_map_onSelectionUpRegion: function() {
       if (this.selectionMode && this.selecting) {
 
         var intersect = this.$_map_getMouseIntersection()
@@ -354,16 +371,43 @@ export default {
             this.$_map_changeSelectionSphere(this.coord_start, this.coord_end)
 
             this.coord_center = this.coord_start.add(this.coord_end).divideScalar(2)
-            var wpos = this.sphericalToCartesian({x:this.coord_center.x, y:this.coord_center.y, z:105})
+            this.coord_center = {x:this.coord_center.x, y:this.coord_center.y, z:105}
+
+            var wpos = this.sphericalToCartesian(this.coord_center)
             var pos = this.cartesianToScreen(wpos)
 
-            this.$emit('selected', pos, this.coord_start, this.coord_end)
+            var geoStart = this.sphericalToGeographic(this.coord_start)
+            var geoEnd = this.sphericalToGeographic(this.coord_end)
+            var geoMin = new THREE.Vector2(Math.min(geoStart.x, geoEnd.x), Math.min(geoStart.y, geoEnd.y))
+            var geoMax = new THREE.Vector2(Math.max(geoStart.x, geoEnd.x), Math.max(geoStart.y, geoEnd.y))
+            this.$emit('selectedRegion', pos, geoMin, geoMax)
             this.disableSelectionMode()
           } else {
             this.clearSelection()
             this.selectionMode = true
           }
         }
+      }
+    },
+
+    $_map_onSelectionUpUF: function() {
+      let intersect = this.$_map_getMouseIntersection()
+      if (intersect && !this.moved) {
+        this.hasSelection = true
+        let coord = {x:this.ufs[intersect].latitude, y:this.ufs[intersect].longitude, z:101}
+        this.coord_center = this.geographicToSpherical(coord)
+
+        var wpos = this.geographicToCartesian(coord)
+        var pos = this.cartesianToScreen(wpos)
+        this.$emit('selectedUF', this.ufs[intersect].cod, pos)
+      }
+    },
+
+    $_map_onSelectionUp: function() {
+      if (this.groupingLevel == 2) {
+        this.$_map_onSelectionUpRegion()
+      } else if (this.groupingLevel == 1) {
+        this.$_map_onSelectionUpUF()
       }
     },
 
@@ -379,13 +423,27 @@ export default {
       }
     },
 
+    $_map_selectCountry: function() {
+      let meanCoord = function(a, o) {
+            return {x: (a.x+o.latitude), 
+                    y: (a.y+o.longitude)}
+          }
+      var coord = this.ufs.reduce(meanCoord, {x:0, y:0})
+      coord = {x:coord.x/this.ufs.length, y:coord.y/this.ufs.length, z:101}
+      this.coord_center = this.geographicToSpherical(coord)
+
+      var wpos = this.geographicToCartesian(coord)
+      var pos = this.cartesianToScreen(wpos)
+      return pos;
+    },
+
     // Mouse interaction
-    $_map_onMouseDown: function () {
+    $_map_onMouseDown() {
       event.preventDefault()
       this.$_map_onSelectionDown()
     },
 
-    $_map_onMouseMove: function () {
+    $_map_onMouseMove() {
       event.preventDefault()
 
       var rect = this.renderer.domElement.getBoundingClientRect();
@@ -395,14 +453,14 @@ export default {
       this.$_map_onSelectionMove()
     },
 
-    $_map_onMouseUp: function () {
+    $_map_onMouseUp() {
       event.preventDefault()
       this.$_map_onSelectionUp()
     },
 
 
     // Touch interaction
-    $_map_onTouchDown: function () {
+    $_map_onTouchDown() {
       var rect = this.renderer.domElement.getBoundingClientRect();
       this.mouse.x =   ((event.touches[0].pageX - rect.left) / window.innerWidth ) * 2 - 1;
       this.mouse.y = - ((event.touches[0].pageY - rect.top) / window.innerHeight ) * 2 + 1;
@@ -410,7 +468,7 @@ export default {
       this.$_map_onSelectionDown()
     },
 
-    $_map_onTouchMove: function (  ) {
+    $_map_onTouchMove(  ) {
       var rect = this.renderer.domElement.getBoundingClientRect();
       this.mouse.x =   ((event.touches[0].pageX - rect.left) / window.innerWidth ) * 2 - 1;
       this.mouse.y = - ((event.touches[0].pageY - rect.top) / window.innerHeight ) * 2 + 1;
@@ -418,27 +476,32 @@ export default {
       this.$_map_onSelectionMove()
     },
 
-    $_map_onTouchUp: function () {
+    $_map_onTouchUp() {
       this.$_map_onSelectionUp()
     },
 
 
     $_map_getMouseIntersection: function() {
-      if (this.intersection_sphere) {
-        this.raycaster.setFromCamera( this.mouse, this.camera )
-        // calculate objects intersecting the picking ray
-        var inters = this.raycaster.intersectObject(this.intersection_sphere)
-        if (inters.length > 0)
-          return inters[0].point
-        
-      } else {
-        this.intersection_sphere = new THREE.Mesh( new THREE.SphereGeometry( 100, 32, 32 ), new THREE.MeshBasicMaterial( {color: 0xffff00} ))
+      if (this.groupingLevel == 2) {
+        if (this.intersection_sphere) {
+          this.raycaster.setFromCamera( this.mouse, this.camera )
+          let inters = this.raycaster.intersectObject(this.intersection_sphere)
+          if (inters.length > 0)
+            return inters[0].point
+          
+        } else {
+          this.intersection_sphere = new THREE.Mesh( new THREE.SphereGeometry( 100, 32, 32 ), new THREE.MeshBasicMaterial( {color: 0xffff00} ))
+        }
+      } else if (this.groupingLevel == 1) {
+        this.raycaster.setFromCamera(this.mouse, this.camera)
+          let inters = this.raycaster.intersectObject(this.ufs_cloud)
+          if (inters.length > 0)
+            return inters[0].index
       }
-
       return false
     },
 
-    $_map_changeSelectionSphere: function (start, end) {
+    $_map_changeSelectionSphere(start, end) {
       var phi_min = Math.min(start.y, end.y)
       var phi_max = Math.max(start.y, end.y)
       var theta_min = Math.min(start.x, end.x)
@@ -457,16 +520,16 @@ export default {
 
 
 
-    $_map_generate_point_cloud: function (points) {
+    $_map_generate_point_cloud(points) {
       var vertices = [];
       var point_sizes =  [];
       var heights = [];
       for(let i = 0; i < points.length; i++) {
         var point = points[i];
-        var r = 100 + point[2]/1000;
-        vertices.push(this.geographicToCartesian(new THREE.Vector3(point[1], point[0], r)));
-        point_sizes.push(point[3]);
-        heights.push(point[2]);
+        var r = 100 + point.altitude/1000;
+        vertices.push(this.geographicToCartesian(new THREE.Vector3(point.latitude, point.longitude, r)));
+        point_sizes.push(point.tamanho);
+        heights.push(point.altitude);
       }
 
       var positions = new Float32Array( vertices.length * 3 );
@@ -531,13 +594,13 @@ export default {
       return new THREE.Points( geometry, material );
     },
 
-    $_map_generate_map_meshes: function (points) {
+    $_map_generate_map_meshes(points) {
       var meshes = [];
       var vertices = [];
       for(let i = 0; i < points.length; i++) {
         var point = points[i];
-        var r = 100 + point[2]/1000;
-        vertices.push(this.geographicToCartesian(new THREE.Vector3(point[1], point[0], r)));
+        var r = 100 + point.altitude/1000;
+        vertices.push(this.geographicToCartesian(new THREE.Vector3(point.latitude, point.longitude, r)));
       }
 
       var map_contour = getContour(points, vertices, 3);
@@ -575,6 +638,7 @@ export default {
         this.$http.get('/api/coordenadas/ufs')
           .then(response => { return response.json() })
           .then(points =>{
+            this.ufs = points.ufs
             this.ufs_cloud = this.$_map_generate_point_cloud(points.ufs)
             this.scene.add(this.ufs_cloud)
             this.ufs_cloud.material.uniforms.opacity.value = 0.25

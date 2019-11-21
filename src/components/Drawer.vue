@@ -6,7 +6,7 @@
       right
       touchless
     >
-    <div class="drawer_container">
+    <div v-if="queryGroups != null" class="drawer_container">
       <!-- Main menu -->
       <v-fade-transition>
         <v-sheet  v-show="drawerScreen == ''">
@@ -27,28 +27,16 @@
           
           <v-subheader>Categorias</v-subheader>
           <v-list dense>
-            <v-list-item link @click.stop="drawerScreen = 'population'">
+            <v-list-item 
+              v-bind:key="item"
+              v-for="item in Object.keys(queryGroups)"
+              link @click.stop="drawerScreen = item"
+            >
               <v-list-item-action>
-                <v-icon x-large>mdi-account-group</v-icon>
+                <v-icon x-large>{{queryGroups[item].icon}}</v-icon>
               </v-list-item-action>
               <v-list-item-content>
-                <v-list-item-title>População</v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-            <v-list-item link @click.stop="drawerScreen = 'economy'">
-              <v-list-item-action>
-                <v-icon x-large>mdi-currency-usd</v-icon>
-              </v-list-item-action>
-              <v-list-item-content>
-                <v-list-item-title>Economia</v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-            <v-list-item link @click.stop="drawerScreen = 'country'">
-              <v-list-item-action>
-                <v-icon x-large>mdi-flag</v-icon>
-              </v-list-item-action>
-              <v-list-item-content>
-                <v-list-item-title>País</v-list-item-title>
+                <v-list-item-title>{{queryGroups[item].title}}</v-list-item-title>
               </v-list-item-content>
             </v-list-item>
           </v-list>
@@ -85,15 +73,16 @@
           </v-list-item>
 
           <v-divider></v-divider>
-      
-          <v-list-item-group 
+
+          <v-list-item-group
             v-model="selectedQuery"
-            v-on:change="onChangedQuery"
+            @change="onChangedQuery"
+            v-if="!loading"
           >
             <v-list-item 
               link 
               v-for="(item, i) in queryGroups[drawerScreen].queries"  
-              v-bind:key="item.title" 
+              v-bind:key="item.title"
               :style="selectedQuery==String(i) ?  { 'background': '#00bcd4', 'color':'white' } : { 'background': '', 'color':'' }"
             >
               <v-list-item-action>
@@ -104,6 +93,15 @@
               </v-list-item-content>
             </v-list-item>
           </v-list-item-group>
+
+          <v-list v-if="loading">
+            <v-skeleton-loader
+              height="46px"
+              type="list-item-avatar"
+              v-bind:key="item.title"
+              v-for="item in queryGroups[drawerScreen].queries" 
+            ></v-skeleton-loader>
+          </v-list>
             
           <v-divider></v-divider>
         </v-sheet>
@@ -116,66 +114,25 @@
 export default {
   name: 'QueryDrawer',
   props: {
-    enabled: {
-      type: Boolean,
-      default: null
-    }
+    loading: Boolean,
+    enabled: Boolean,
+    queryGroups: Object,
   },
   data: () => ({
     drawerScreen: '',
     selectedQuery: null,
-    queryGroups: {
-      "population": {
-        title: "População",
-        queries: [
-        {title: "Gênero",       icon: "mdi-gender-male-female"},
-        {title: "Renda",        icon: "mdi-cash-multiple"},
-        {title: "Emprego",      icon: "mdi-worker"},
-        {title: "Moradia",      icon: "mdi-home"},
-        {title: "Saneamento Básico",icon: "mdi-paper-roll"},
-        {title: "Escolaridade", icon: "mdi-school"},
-        {title: "Natalidade",   icon: "mdi-baby-carriage"},
-        ],
-      },
-
-      "economy": {
-        title: "Economia",
-        queries: [
-        {title: "Gênero",       icon: "mdi-gender-male-female"},
-        {title: "Renda",        icon: "mdi-cash-multiple"},
-        {title: "Emprego",      icon: "mdi-worker"},
-        {title: "Moradia",      icon: "mdi-home"},
-        {title: "Saneamento Básico",icon: "mdi-paper-roll"},
-        {title: "Escolaridade", icon: "mdi-school"},
-        {title: "Natalidade",   icon: "mdi-baby-carriage"},
-        ],
-      },
-
-      "country": {
-        title: "País",
-        queries: [
-        {title: "Gênero",       icon: "mdi-gender-male-female"},
-        {title: "Renda",        icon: "mdi-cash-multiple"},
-        {title: "Emprego",      icon: "mdi-worker"},
-        {title: "Moradia",      icon: "mdi-home"},
-        {title: "Saneamento Básico",icon: "mdi-paper-roll"},
-        {title: "Escolaridade", icon: "mdi-school"},
-        {title: "Natalidade",   icon: "mdi-baby-carriage"},
-        ],
-      }
-    }
   }),
   methods: {
-    onChangedQuery: function() {
+    onChangedQuery() {
       if (typeof this.selectedQuery !== 'undefined') {
-        let queryTitle = this.queryGroups[this.drawerScreen].queries[this.selectedQuery].title
-        this.$emit('changedQuery', {title:queryTitle, id:this.selectedQuery, group:this.drawerScreen})
+        let query = this.queryGroups[this.drawerScreen].queries[this.selectedQuery]
+        this.$emit('changedQuery', {title:query.title, id:query.id, group:this.drawerScreen})
         this.$emit('update:enabled', null);
       } else {
-        this.$emit('changedQuery', {title:null, id:null, group:null})
+        this.$emit('changedQuery', null)
       }
     },
-    onReturnToMenu: function() {
+    onReturnToMenu() {
       this.drawerScreen=''
       this.selectedQuery=null
       this.$emit('returnedToMenu')
