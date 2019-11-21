@@ -7,12 +7,13 @@ module.exports = async (req, res) => {
       SELECT AVG(longitude_coord) as longitude, 
              AVG(latitude_coord) as latitude, 
              AVG(altitude_coord) as altitude, 
-             AVG(tamanho_coord) as tamanho
+             AVG(tamanho_coord) as tamanho,
+             cod_uf as cod
       FROM municipio NATURAL JOIN coord
       GROUP BY cod_uf
       ORDER BY cod_uf
     `)
 
-  var ufs = coords.map((o) => [o.longitude, o.latitude, o.altitude, Math.min(o.tamanho*10, 100)])
+  var ufs = coords.map((o) => {o.tamanho = Math.min(o.tamanho*10, 75); return o})
   res.status(200).json({ ufs })
 }
