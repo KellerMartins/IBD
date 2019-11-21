@@ -129,7 +129,7 @@
               return null
           case 2:
             if (this.hasSelection)
-              return "regiao/"+this.selectionMin.x+","+this.selectionMin.y+";"+this.selectionMax.x+","+this.selectionMax.y
+              return "regiao/"+encodeURIComponent(this.selectionMin.x+","+this.selectionMin.y+";"+this.selectionMax.x+","+this.selectionMax.y)
             else
               return null
         }
