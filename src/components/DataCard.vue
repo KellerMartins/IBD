@@ -1,17 +1,19 @@
 <template>
-    <v-card id="card"
-        elevation=24
-        v-if="show"
-        :width=width
-        :height=height
-        v-bind:style="{
-        top: y-height + 'px', 
-        left: x-width/2 + 'px',
-        }"
-    >
-      <h3>{{title}}</h3>
-      <apexchart :height="270+'px'" type="donut" :options="options" :series="series"></apexchart>
-    </v-card>
+      <v-fade-transition>
+        <v-card id="card"
+            elevation=24
+            v-if="show"
+            :width=width
+            :height=height
+            v-bind:style="{
+            top: y-height + 'px', 
+            left: x-width/2 + 'px',
+            }"
+        >
+          <h3>{{title}}</h3>
+          <apexchart :height="270+'px'" type="donut" :options="options" :series="series"></apexchart>
+        </v-card>
+      </v-fade-transition>
 </template>
 
 <script>
