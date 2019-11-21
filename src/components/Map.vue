@@ -399,7 +399,7 @@ export default {
 
         var wpos = this.geographicToCartesian(coord)
         var pos = this.cartesianToScreen(wpos)
-        this.$emit('selectedUF', this.ufs[intersect].cod, pos)
+        this.$emit('selectedUF', this.ufs[intersect].sigla, pos)
       }
     },
 
