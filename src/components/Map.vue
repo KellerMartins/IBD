@@ -638,6 +638,9 @@ export default {
         this.$http.get('/api/coordenadas/ufs')
           .then(response => { return response.json() })
           .then(points =>{
+            for (let i = 0; i < points.ufs.length; i++)
+              points.ufs[i].tamanho = Math.min(points.ufs[i].tamanho*10, 75)
+            
             this.ufs = points.ufs
             this.ufs_cloud = this.$_map_generate_point_cloud(points.ufs)
             this.scene.add(this.ufs_cloud)
