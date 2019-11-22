@@ -22,11 +22,11 @@
       :dark="!selectionMode && !hasSelection"
       :loading="!loadedMap"
       :color="selectionMode || hasSelection ? 'yellow':'cyan'"
-      v-if="(loadedMap) && groupingLevel == 2"
+      v-if="loadedMap && showSelectButton && (groupingLevel === 2 || (hasSelection && groupingLevel === 1))"
       @click="$_map_pressedSelect"
     >
-      <v-icon v-if="!hasSelection">mdi-selection</v-icon>
-      <v-icon v-else>mdi-close</v-icon>
+      <v-icon v-if="!hasSelection && groupingLevel === 2">mdi-selection</v-icon>
+      <v-icon v-if="hasSelection && groupingLevel !== 0">mdi-close</v-icon>
     </v-btn>
 
 
@@ -117,6 +117,7 @@ export default {
     }
   },
   props: {
+    showSelectButton: Boolean,
     groupingLevel: Number,
     colormap: {
       type: String,
@@ -171,7 +172,7 @@ export default {
       var pos = this.cartesianToScreen(wpos)
       return pos;
     },
-    
+
     toggleSelectionMode: function() {
       if (this.selectionMode)
         this.disableSelectionMode()

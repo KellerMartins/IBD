@@ -31,7 +31,8 @@
         v-bind:loading="!loaded && !failedToLoad"
       >
         <!-- Map -->
-        <Map ref="map" 
+        <Map ref="map"
+          :showSelectButton="selectedQuery!=null"
           :groupingLevel="dataGroupingLevel"
           :colormap="selectedQuery!=null && selectedQuery.id!=null? 'summer' : ''"
           @loadedMap="loaded = true"
@@ -62,15 +63,15 @@
           mandatory
           shaped
         >
-          <v-btn>
+          <v-btn :disabled="selectedQuery === null">
             <v-icon>mdi-flag</v-icon>
             País
           </v-btn>
-          <v-btn>
+          <v-btn :disabled="selectedQuery === null">
             <v-icon>mdi-terrain</v-icon>
             UF
           </v-btn>
-          <v-btn>
+          <v-btn :disabled="selectedQuery === null">
             <v-icon>mdi-city</v-icon>
             Município
           </v-btn>
@@ -185,6 +186,7 @@
           this.hasSelection = true
           this.selectedUF = cod
         } else {
+          this.$refs.map.clearSelection()
           this.hasSelection = false
         }
       },
