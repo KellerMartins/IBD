@@ -1,17 +1,39 @@
 <template>
       <v-fade-transition>
         <v-card id="card"
-            elevation=24
-            v-if="show"
-            :width=width
-            :height=height
-            v-bind:style="{
+          elevation=24
+          v-if="show && !animShow"
+          :width=width
+          :height=height
+          v-bind:style="{
             top: y-height/1.25 + 'px', 
             left: x-width/2 + 'px',
-            }"
-        >
-          <h3>{{title}}</h3>
-          <apexchart :height="270+'px'" type="donut" :options="options" :series="series"></apexchart>
+          }"
+        > 
+          <div v-if="!requestFailed">
+            <div v-if="!loading">
+              <h3>{{title}}</h3>
+              <apexchart :height="270+'px'" type="donut" :options="options" :series="series"></apexchart>
+            </div>
+            <div v-else>
+              <v-skeleton-loader type="heading" class="px-1 ma-2"/>
+              <v-skeleton-loader type="image" class="px-1 ma-2"/>
+            </div>
+          </div>
+          <v-container v-else class="ma-auto">
+            <v-row align="center">
+              <div class="text-center ma-auto">
+                <h4 class="ma-2">{{errorMessage}}</h4>
+                <v-btn 
+                  class="ma-2"
+                  outlined
+                  @click="get_data"
+                >
+                Tentar novamente
+                </v-btn>
+              </div>
+            </v-row>
+          </v-container>
         </v-card>
       </v-fade-transition>
 </template>
@@ -30,23 +52,35 @@ export default {
       type: Number,
       default: 240
     },
-    height: {
-      type: Number,
-      default: 252
-    },
     zoom: {
       type: Number,
       default: 1
     },
   },
+
+  computed: {
+    height(){
+      return this.requestFailed? 140 : 252
+    }
+  },
+
   data:  () => ({
+    requestFailed: false,
+    errorMessage: "ERROR",
+
+    animShow: false,
+    loading: false,
+    
     title: "Some long title to test",
+    series: [],
     options: {
+      noData: { text: "Nenhum dado encontrado" },
       tooltip: { enabled: false },
       dataLabels: { style: { fontSize: '10px' } },
       legend: { position: 'bottom',horizontalAlign: 'center'},
       plotOptions: {
         pie: {
+          expandOnClick: false,
           customScale: 1,
           offsetX: 0,
           offsetY: 0,
@@ -54,9 +88,10 @@ export default {
             size: '55%',
             labels: {
               show: true,
-              name: { fontSize: '16px', offsetY: -11 },
-              value: { fontSize: '12px', offsetY: -5 },
-              total: { show: true }
+              name: { show: false},
+              value: { fontSize: '14px', offsetY: 0, formatter: x => { return Number(x).toLocaleString() } },
+              total: { show: true , formatter: w => 
+                w.globals.seriesTotals.reduce((a, b) => a + b, 0).toLocaleString() }
             }
           }
         }  
@@ -64,30 +99,68 @@ export default {
       theme: {
         palette: 'palette2', 
       },
-      labels: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+      labels: null,
     },
-    series: [44000, 55000, 41000, 17000, 15000, 12000]
   }),
   methods:{
     get_data() {
       console.log('/api/'+this.at+'/'+this.query)
-      /*this.$http.get('/api/'+at+'/'+this.query)
-        .then(response => response.json())
+      this.requestFailed = false
+      this.loading = true
+      this.$http.get('/api/'+this.at+'/'+this.query)
+        .then(response => response.json(),
+              response => { throw response.status })
         .then(json =>{
+
+          var chartType = ''
+          for (let i = 0; i < this.queryList.length; i++)
+            if (this.queryList[i].id == this.query)
+              chartType = this.queryList[i].chart
           
-        })*/
-    }
+          let labels = Object.keys(json)
+          if (labels.length > 0) {
+            if (chartType === "pie") {
+              this.options.labels = labels
+              this.series = Object.values(json)
+            } else if (chartType === "lines") {
+              this.series = labels.map( l => { return {name:l, data:json[l]} })
+            }
+          } else {
+            this.options.labels = []
+            this.series = []
+          }
+          this.loading = false
+        })
+        .catch(e => { 
+          this.requestFailed = true
+          if (typeof e === 'number') {
+            if (e == 404)
+              this.errorMessage = "Consulta inexistente"
+            else
+              this.errorMessage = "Falha na conexão com o servidor"
+          } else {
+            this.errorMessage = "Erro na aplicação"
+          }
+        })
+    },
   },
   watch: {
     query() {
+      this.animShow = true
       if (this.queryList.map(q => q.id).includes(this.query) && this.at != null)
         this.get_data();
     },
     at() {
+      this.animShow = true
       if (this.queryList.map(q => q.id).includes(this.query) && this.at != null)
         this.get_data();
     },
   },
+  updated() {
+    this.$nextTick(function () {
+      this.animShow = false
+    })
+  }
 }
 </script>
 
