@@ -60,6 +60,11 @@ function clamp(number, min, max) {
   return Math.max(min, Math.min(number, max));
 }
 
+function getMultiplier() {
+  var res = screen.height * window.devicePixelRatio
+  return res / 768;
+}
+
 function geometryFromContour(contour) {
   contour.pop()
   var tris = new poly2tri.SweepContext(contour).triangulate().getTriangles();
@@ -122,7 +127,7 @@ export default {
     groupingLevel: function(val) {
       switch (val) {
         case 0:
-          this.ufs_cloud.material.uniforms.opacity.value = 0.5
+          this.ufs_cloud.material.uniforms.opacity.value = 0.25
           this.municipios_cloud.material.uniforms.opacity.value = 0.5
           this.hasSelection = true
 
@@ -131,7 +136,7 @@ export default {
 
         case 1:
           this.ufs_cloud.material.uniforms.opacity.value = 1.0
-          this.municipios_cloud.material.uniforms.opacity.value = 0.5
+          this.municipios_cloud.material.uniforms.opacity.value = 0.25
           this.hasSelection = false
         break;
 
@@ -358,6 +363,13 @@ export default {
         this.camera.aspect = width / height
         this.camera.updateProjectionMatrix()
         this.renderer.setSize(width, height)
+
+        let multiplier = getMultiplier();
+        if (typeof this.ufs_cloud !== 'undefined')
+          this.ufs_cloud.material.uniforms.multiplier.value = multiplier
+        
+        if (typeof this.municipios_cloud !== 'undefined')
+          this.municipios_cloud.material.uniforms.multiplier.value = multiplier
       }
     },
 
@@ -580,11 +592,14 @@ export default {
         uniforms: {
           sprite: { value: spriteTex },
           colormap: { value: colormapTex},
-          opacity: { value: 1 }
+          opacity: { value: 1 },
+          multiplier: { value: getMultiplier() }
         },
         vertexShader: `
         attribute float size;
         attribute float value;
+
+        uniform float multiplier;
 
         varying float t;
         varying float fade;
@@ -594,7 +609,7 @@ export default {
             vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 
             fade = clamp(( 30.0 / -mvPosition.z ), 0.0, 1.0);
-            gl_PointSize = size * ( 20.0 / -mvPosition.z );
+            gl_PointSize = size * multiplier * ( 20.0 / -mvPosition.z );
             gl_Position = projectionMatrix * mvPosition;
         }`,
         fragmentShader:`

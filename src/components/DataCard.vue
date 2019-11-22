@@ -6,7 +6,7 @@
             :width=width
             :height=height
             v-bind:style="{
-            top: y-height + 'px', 
+            top: y-height/1.25 + 'px', 
             left: x-width/2 + 'px',
             }"
         >
