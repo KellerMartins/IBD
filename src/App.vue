@@ -28,13 +28,14 @@
     <v-content>
       <v-card id="create"
         height=100%
-        v-bind:loading="!loaded"
+        v-bind:loading="!loaded && !failedToLoad"
       >
         <!-- Map -->
         <Map ref="map" 
           :groupingLevel="dataGroupingLevel"
           :colormap="selectedQuery!=null && selectedQuery.id!=null? 'summer' : ''"
-          @loadedMap="loaded = true" 
+          @loadedMap="loaded = true"
+          @failedToLoad="failedToLoad = true"
           @enabledSelectionMode="selectionMode = true"
           @disabledSelectionMode="selectionMode = false"
           @clearedSelection="hasSelection = false"
@@ -96,6 +97,7 @@
     data: () => ({
       drawer: null,
       loaded: false,
+      failedToLoad: false,
       queryGroups: null,
       selectedQuery: null,
 

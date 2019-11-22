@@ -28,6 +28,24 @@
       <v-icon v-if="!hasSelection">mdi-selection</v-icon>
       <v-icon v-else>mdi-close</v-icon>
     </v-btn>
+
+
+    <v-overlay :value="failedToLoad" z-index=100>
+      <v-container fluid class="pa-0">
+        <v-row align="center">
+          <div class="text-center">
+            <h2>Falha na conexão com o servidor</h2>
+            <h3>Tente novamente mais tarde</h3>
+              <v-btn 
+                class="ma-2"
+                outlined
+                @click="$_map_reloadPage"
+              >Recarregar
+            </v-btn>
+          </div>
+        </v-row>
+      </v-container>
+    </v-overlay>
   </div>
 </template>
 
@@ -90,6 +108,7 @@ export default {
       selecting: false,
       hasSelection: false,
       selectionMode: false,
+      failedToLoad: false,
     }
   },
   props: {
@@ -231,6 +250,10 @@ export default {
 
 
     //------------------------------------------// Private Methods
+    $_map_reloadPage(){
+      window.location.reload()
+    },
+
     $_map_init: function() {
       let container = document.getElementById('container')
 
@@ -624,8 +647,9 @@ export default {
   },
   mounted() {
     this.$_map_init()
+    let err = response => { throw new Error(response.status) }
     this.$http.get('/api/coordenadas/municipios')
-      .then(response => { return response.json() })
+      .then(response => { return response.json() }, err)
       .then(points =>{
         this.municipios_cloud = this.$_map_generate_point_cloud(points.municipios)
         this.scene.add(this.municipios_cloud)
@@ -636,7 +660,7 @@ export default {
       })
       .then(() =>{
         this.$http.get('/api/coordenadas/ufs')
-          .then(response => { return response.json() })
+          .then(response => { return response.json() }, err)
           .then(points =>{
             for (let i = 0; i < points.ufs.length; i++)
               points.ufs[i].tamanho = Math.min(points.ufs[i].tamanho*10, 75)
@@ -650,7 +674,9 @@ export default {
             this.loadedMap = true
             this.$emit('loadedMap')
           })
+          .catch(() => { this.failedToLoad = true; this.$emit('failedToLoad')})
       })
+      .catch(() => { this.failedToLoad = true; this.$emit('failedToLoad')})
   },
 }
 </script>
@@ -660,7 +686,7 @@ export default {
     margin: 0;
     min-width: 100%;
     min-height: 100%;
-    overflow:hidden;
+    overflow: hidden;
     position: absolute;
   }
 
