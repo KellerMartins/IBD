@@ -23,11 +23,11 @@ module.exports = async (req, res) => {
       ],
     },
 
-    "country": {
-      title: "País",
+    "tests": {
+      title: "Testes",
       icon: "mdi-flag",
       queries: [
-        {id:"teste2", title: "Teste 2", icon: "mdi-flag", chart:"pie"},
+        {id:"exemplo", title: "Teste Request", icon: "mdi-flag", chart:"pie"},
       ],
     }
   }
