@@ -9,9 +9,9 @@ const escape = require('sql-template-strings')
 
 module.exports = async (req, res) => {
     if (!req.query.name)
-        res.status(404).end("Faltou o parametro 'name'");
+        res.status(400).end("Faltou o parametro 'name'");
     else if (!req.query.address)
-        res.status(404).end("Faltou o parametro 'address'");
+        res.status(400).end("Faltou o parametro 'address'");
     else {
         // O retorno de db.query é uma lista de objetos que representam as linhas retornadas pela consulta
         // Cada objeto da lista possui uma propriedade por coluna retornada pela consulta realizada

@@ -8,5 +8,5 @@ module.exports = async (req, res) => {
   `)
 
   var total = {"Total de habitantes": total_hab.sum}
-  res.status(200).json({ total })
+  res.status(200).json(total)
 }
