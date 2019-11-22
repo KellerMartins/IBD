@@ -108,15 +108,18 @@
       selectionMax: null,
 
       dataGroupingLevel: 2,
-      dataWpos: null,
       dataScreenX: 0,
       dataScreenY: 0,
       dataZoom: 1,
     }),
     watch: {
-      dataGroupingLevel() {
+      dataGroupingLevel(level) {
         this.$refs.map.clearSelection()
-        this.dataWpos = null
+        if (level === 0) {
+          this.onSelectCountry()
+          if (this.selectedQuery !== null)
+            this.hasSelection = true
+        }
       },
     },
     computed: {
@@ -144,7 +147,6 @@
     methods: {
       onReturnToMenu() {
         this.$refs.map.clearSelection()
-        this.dataWpos = null
         this.selectedQuery = null
       },
 
@@ -152,12 +154,11 @@
         this.selectedQuery = query
         if (query === null) {
           this.$refs.map.clearSelection()
-          this.dataWpos = null
+          this.hasSelection = false
+        } else if (this.dataGroupingLevel == 0) {
+          this.onSelectCountry()
+          this.hasSelection = true
         }
-        if (this.dataGroupingLevel == 0)
-          this.hasSelection = query !== null
-        else
-          this.hasSelection = this.hasSelection && query !== null
       },
 
       onSelectRegion(pos, min, max) {
@@ -188,17 +189,17 @@
         }
       },
 
-      onSelectCountry(pos) {
-          this.dataScreenX = pos.x
-          this.dataScreenY = pos.y
-          this.hasSelection = this.selectedQuery !== null
-      },
-
       onMapMoved(pos, zoom) {
         this.dataScreenX = pos.x
         this.dataScreenY = pos.y
         this.dataZoom = zoom
       },
+
+      onSelectCountry() {
+        let pos = this.$refs.map.selectCountry()
+        this.dataScreenX = pos.x
+        this.dataScreenY = pos.y
+      }
     },
     mounted() {
       this.$http.get('/api')

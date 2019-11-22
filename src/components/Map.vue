@@ -129,21 +129,16 @@ export default {
         case 0:
           this.ufs_cloud.material.uniforms.opacity.value = 0.25
           this.municipios_cloud.material.uniforms.opacity.value = 0.5
-          this.hasSelection = true
-
-          this.$emit('selectedCountry', this.$_map_selectCountry())
         break;
 
         case 1:
           this.ufs_cloud.material.uniforms.opacity.value = 1.0
           this.municipios_cloud.material.uniforms.opacity.value = 0.25
-          this.hasSelection = false
         break;
 
         case 2:
           this.ufs_cloud.material.uniforms.opacity.value = 0.25
           this.municipios_cloud.material.uniforms.opacity.value  = 1.0
-          this.hasSelection = false
         break;
       }
     },
@@ -162,6 +157,21 @@ export default {
   },
   methods: { 
     //------------------------------------------// Public Methods
+    selectCountry: function() {
+      this.hasSelection = true
+      let meanCoord = function(a, o) {
+            return {x: (a.x+o.latitude), 
+                    y: (a.y+o.longitude)}
+          }
+      var coord = this.ufs.reduce(meanCoord, {x:0, y:0})
+      coord = {x:coord.x/this.ufs.length, y:coord.y/this.ufs.length, z:101}
+      this.coord_center = this.geographicToSpherical(coord)
+
+      var wpos = this.geographicToCartesian(coord)
+      var pos = this.cartesianToScreen(wpos)
+      return pos;
+    },
+    
     toggleSelectionMode: function() {
       if (this.selectionMode)
         this.disableSelectionMode()
@@ -456,20 +466,6 @@ export default {
             this.$_map_changeSelectionSphere(this.coord_start, this.coord_move)
         }
       }
-    },
-
-    $_map_selectCountry: function() {
-      let meanCoord = function(a, o) {
-            return {x: (a.x+o.latitude), 
-                    y: (a.y+o.longitude)}
-          }
-      var coord = this.ufs.reduce(meanCoord, {x:0, y:0})
-      coord = {x:coord.x/this.ufs.length, y:coord.y/this.ufs.length, z:101}
-      this.coord_center = this.geographicToSpherical(coord)
-
-      var wpos = this.geographicToCartesian(coord)
-      var pos = this.cartesianToScreen(wpos)
-      return pos;
     },
 
     // Mouse interaction
