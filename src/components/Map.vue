@@ -467,7 +467,11 @@ export default {
           this.coord_move = this.cartesianToSpherical(intersect)
           if (this.coord_start.distanceTo(this.coord_move) > 0)
             this.$_map_changeSelectionSphere(this.coord_start, this.coord_move)
+        } else if (this.groupingLevel === 1) {
+          document.body.style.cursor = "pointer"
         }
+      } else {
+        document.body.style.cursor = "default"
       }
     },
 
