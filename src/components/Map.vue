@@ -113,12 +113,12 @@ export default {
       selecting: false,
       hasSelection: false,
       selectionMode: false,
-      failedToLoad: false,
     }
   },
   props: {
     showSelectButton: Boolean,
     groupingLevel: Number,
+    failedToLoad: Boolean,
     colormap: {
       type: String,
       default: ""
@@ -688,9 +688,9 @@ export default {
             this.loadedMap = true
             this.$emit('loadedMap')
           })
-          .catch(() => { this.failedToLoad = true; this.$emit('failedToLoad')})
+          .catch(() => { this.$emit('update:failedToLoad', true) })
       })
-      .catch(() => { this.failedToLoad = true; this.$emit('failedToLoad')})
+      .catch(() => { this.$emit('update:failedToLoad', true) })
   },
 }
 </script>
