@@ -12,7 +12,8 @@
         > 
           <div v-if="!requestFailed">
             <div v-if="!loading">
-              <h3>{{title}}</h3>
+              <h3 v-if="!smallTitle">{{title}}</h3>
+              <h5 v-else class="my-1">{{title}}</h5>
               <apexchart :height="270+'px'" type="donut" :options="options" :series="series"></apexchart>
             </div>
             <div v-else>
@@ -42,6 +43,8 @@
 export default {
   name: 'DataCard',
   props: {
+    title: String,
+    smallTitle: Boolean,
     queryList: Array,
     query: String,
     at: String,
@@ -71,7 +74,6 @@ export default {
     animShow: false,
     loading: false,
     
-    title: "Some long title to test",
     series: [],
     options: {
       noData: { text: "Nenhum dado encontrado" },
@@ -173,6 +175,9 @@ export default {
     z-index: 1;
   }
   h3 {
+    text-align: center;
+  }
+  h5 {
     text-align: center;
   }
 </style>

@@ -48,6 +48,8 @@
 
         <!-- Data Card -->
         <DataCard
+          :title="cartTitle"
+          :smallTitle="dataGroupingLevel==2"
           :show="hasSelection"
           :zoom="dataZoom"
           :queryList="queryList"
@@ -138,6 +140,19 @@
               return "regiao/"+encodeURIComponent(this.selectionMin.x+","+this.selectionMin.y+";"+this.selectionMax.x+","+this.selectionMax.y)
             else
               return null
+        }
+        return null
+      },
+      cartTitle () {
+        switch(this.dataGroupingLevel) {
+          case 0:
+            return "Brasil"
+          case 1:
+            return this.selectedUF
+          case 2:
+            return this.selectionMin === null || this.selectionMax === null ? "" : 
+                   "lat. " + this.selectionMin.x.toFixed(1) + " " + this.selectionMax.x.toFixed(1) +
+                   " | lon. " + this.selectionMin.y.toFixed(1) + " " + this.selectionMax.y.toFixed(1)
         }
         return null
       },
