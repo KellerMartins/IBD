@@ -414,19 +414,21 @@ export default {
           this.coord_end = this.cartesianToSpherical(intersect)
           if (this.coord_start.distanceTo(this.coord_end) > 0) {
             this.hasSelection = true
-            this.$_map_changeSelectionSphere(this.coord_start, this.coord_end)
-
-            this.coord_center = this.coord_start.add(this.coord_end).divideScalar(2)
+            
+            var geoStart = this.sphericalToGeographic(this.coord_start)
+            var geoEnd = this.sphericalToGeographic(this.coord_end)
+            var geoMin = {x:Math.min(geoStart.x, geoEnd.x), y:Math.min(geoStart.y, geoEnd.y)}
+            var geoMax = {x:Math.max(geoStart.x, geoEnd.x), y:Math.max(geoStart.y, geoEnd.y)}
+            
+            this.coord_center = new THREE.Vector3().addVectors(this.coord_start, this.coord_end).divideScalar(2)
             this.coord_center = {x:this.coord_center.x, y:this.coord_center.y, z:105}
 
             var wpos = this.sphericalToCartesian(this.coord_center)
             var pos = this.cartesianToScreen(wpos)
 
-            var geoStart = this.sphericalToGeographic(this.coord_start)
-            var geoEnd = this.sphericalToGeographic(this.coord_end)
-            var geoMin = new THREE.Vector2(Math.min(geoStart.x, geoEnd.x), Math.min(geoStart.y, geoEnd.y))
-            var geoMax = new THREE.Vector2(Math.max(geoStart.x, geoEnd.x), Math.max(geoStart.y, geoEnd.y))
             this.$emit('selectedRegion', pos, geoMin, geoMax)
+
+            this.$_map_changeSelectionSphere(this.coord_start, this.coord_end)
             this.disableSelectionMode()
           } else {
             this.clearSelection()
