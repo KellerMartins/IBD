@@ -25,9 +25,10 @@ module.exports = async (req, res) => {
 
     "tests": {
       title: "Testes",
-      icon: "mdi-flag",
+      icon: "mdi-test-tube",
       queries: [
-        {id:"exemplo", title: "Teste Request", icon: "mdi-flag", chart:"pie"},
+        {id:"exemplo", title: "Teste Pizza", icon: "mdi-chart-arc", chart:"pie"},
+        {id:"exemploline", title: "Teste Line", icon: "mdi-chart-line", chart:"line"},
       ],
     }
   }
