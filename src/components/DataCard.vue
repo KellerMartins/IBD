@@ -14,7 +14,12 @@
             <div v-if="!loading">
               <h3 v-if="!smallTitle">{{title}}</h3>
               <h5 v-else class="my-1">{{title}}</h5>
-              <apexchart :height="270+'px'" type="donut" :options="options" :series="series"></apexchart>
+              <apexchart 
+                :type="chartType === 'pie' ? 'donut': 'line'" 
+                :height="(chartType === 'pie'? 270 : 225)+'px'" 
+                :options="options" 
+                :series="series">
+              </apexchart>
             </div>
             <div v-else>
               <v-skeleton-loader type="heading" class="px-1 ma-2"/>
@@ -51,10 +56,6 @@ export default {
     show: Boolean,
     x: Number,
     y: Number,
-    width: {
-      type: Number,
-      default: 240
-    },
     zoom: {
       type: Number,
       default: 1
@@ -64,6 +65,9 @@ export default {
   computed: {
     height(){
       return this.requestFailed? 140 : 252
+    },
+    width(){
+      return this.chartType === 'pie'? 240 : 340
     }
   },
 
@@ -74,6 +78,7 @@ export default {
     animShow: false,
     loading: false,
     
+    chartType: "pie",
     series: [],
     options: {
       noData: { text: "Nenhum dado encontrado" },
@@ -98,6 +103,14 @@ export default {
           }
         }  
       },
+      yaxis: {
+        labels: {
+          formatter: x => x < 1000000 ? Number(x).toLocaleString() : 
+                          x < 1000000000 ? Number(x/1000000).toLocaleString() + " mi" : 
+                          x < 1000000000000 ? Number(x/1000000000).toLocaleString() + " bi" : 
+                                                    Number(x/1000000000000).toLocaleString() + " tri"
+        }
+      },
       theme: {
         palette: 'palette2', 
       },
@@ -114,18 +127,25 @@ export default {
               response => { throw response.status })
         .then(json =>{
 
-          var chartType = ''
           for (let i = 0; i < this.queryList.length; i++)
             if (this.queryList[i].id == this.query)
-              chartType = this.queryList[i].chart
+              this.chartType = this.queryList[i].chart
           
           let labels = Object.keys(json)
           if (labels.length > 0) {
-            if (chartType === "pie") {
+
+            if (this.chartType === "pie") {
               this.options.labels = labels
               this.series = Object.values(json)
-            } else if (chartType === "lines") {
-              this.series = labels.map( l => { return {name:l, data:json[l]} })
+            } else if (this.chartType === "line") {
+              var newLabels = []
+              this.series = labels.map( l => { 
+                return {name:l, data:json[l].map(x => {
+                  if (!newLabels.includes(x.x)) 
+                    newLabels.push(x.x); return x.y
+                  })} 
+              })
+              this.options.labels = newLabels
             }
           } else {
             this.options.labels = []
