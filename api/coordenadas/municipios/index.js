@@ -11,6 +11,9 @@ module.exports = async (req, res) => {
              cod_municipio as cod
       FROM municipio NATURAL JOIN coord
     `)
-
-  res.status(200).json({ municipios })
+  
+  if ('error' in municipios)
+    res.status(500).end(municipios['error'].message);
+  else
+    res.status(200).json({ municipios })
 }
