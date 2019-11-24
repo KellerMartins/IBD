@@ -15,6 +15,9 @@ module.exports = async (req, res) => {
       GROUP BY ano
     `)
 
+    if ('error' in pais_pib_anos)
+      return res.status(500).end(pais_pib_anos.error.message);
+
     const regiao_pib_anos = await db.query(escape`
       SELECT ano as x, AVG(pib) as y
       FROM economia NATURAL JOIN municipio NATURAL JOIN coord
@@ -22,6 +25,9 @@ module.exports = async (req, res) => {
             longitude_coord > ${min.lon} AND longitude_coord < ${max.lon}
       GROUP BY ano
     `)
+
+    if ('error' in regiao_pib_anos)
+      return res.status(500).end(regiao_pib_anos.error.message);
     
     var total = {}
     total["PIB: Média por município, Brasil"] = pais_pib_anos

@@ -9,19 +9,25 @@ module.exports = async (req, res) => {
   
   else {
     let [min, max] = coords;
-    const [total_hab] = await db.query(escape`
+    const total_hab = await db.query(escape`
       SELECT SUM(num_habitantes_municipio) as sum
       FROM municipio
     `)
 
-    const [hab_regiao] = await db.query(escape`
+    if ('error' in total_hab)
+      return res.status(500).end(total_hab.error.message);
+
+    const hab_regiao = await db.query(escape`
       SELECT SUM(num_habitantes_municipio) as sum
       FROM municipio NATURAL JOIN coord
       WHERE latitude_coord  > ${min.lat} AND latitude_coord  < ${max.lat} AND
             longitude_coord > ${min.lon} AND longitude_coord < ${max.lon}
     `)
 
-    var total = {"Outras regiões": (total_hab.sum - hab_regiao.sum), "Habitantes na região": hab_regiao.sum}
+    if ('error' in hab_regiao)
+      return res.status(500).end(hab_regiao.error.message);
+
+    var total = {"Outras regiões": (total_hab[0].sum - hab_regiao[0].sum), "Habitantes na região": hab_regiao[0].sum}
     res.status(200).json(total)
   }
 }

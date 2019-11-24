@@ -15,7 +15,7 @@ module.exports = async (req, res) => {
     `)
 
   if ('error' in ufs)
-    res.status(500).end(ufs['error'].message);
+    res.status(500).end(ufs.error.message);
   else
     res.status(200).json({ ufs })
 }
