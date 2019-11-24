@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
     `)
   
   if ('error' in municipios)
-    res.status(500).end(municipios['error'].message);
+    res.status(500).end(municipios.error.message);
   else
     res.status(200).json({ municipios })
 }

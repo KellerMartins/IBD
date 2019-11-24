@@ -8,6 +8,9 @@ module.exports = async (req, res) => {
     GROUP BY ano
   `)
 
+  if ('error' in pib_anos)
+    return res.status(500).end(pib_anos.error.message);
+
   var result = {"PIB do país": pib_anos}
   res.status(200).json(result)
 }
