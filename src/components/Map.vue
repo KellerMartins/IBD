@@ -25,7 +25,7 @@
       v-if="loadedMap && showSelectButton && (groupingLevel === 2 || (hasSelection && groupingLevel === 1))"
       @click="$_map_pressedSelect"
     >
-      <v-icon v-if="!hasSelection && groupingLevel === 2">mdi-selection</v-icon>
+      <v-icon v-if="!hasSelection && groupingLevel === 2">mdi-selection-search</v-icon>
       <v-icon v-if="hasSelection && groupingLevel !== 0">mdi-close</v-icon>
     </v-btn>
 
