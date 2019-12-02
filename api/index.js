@@ -32,7 +32,7 @@ module.exports = async (req, res) => {
         {id:"relatorio/mulheresdoutoras", title: "Mulheres com doutorado", icon: "mdi-face-woman", chart:"pie"},
         {id:"educacao/alfabetizacao", title: "Alfabetização", icon: "mdi-alphabetical", chart:"pie"},
         {id:"relatorio/pibmedio", title: "PIB médio por município", icon: "mdi-currency-usd", chart:"line"},
-        {id:"relatorio/empregoformal", title: "Emprego formal", icon: "mdi-worker", chart:"pie"},
+        {id:"relatorio/empregoformal", title: "Emprego formal", icon: "mdi-worker", chart:"bar"},
       ],
     }
   }

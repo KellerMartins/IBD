@@ -21,8 +21,7 @@ module.exports = async (req, res) => {
   if ('error' in formal_uf)
     return res.status(500).end(formal_uf.error.message);
 
-  var total = {}
-  total["Pessoas com empregos informais ou não responderam em "+sigla_uf] = Math.floor(total_empregados_uf[0].sum - formal_uf[0].sum)
-  total["Pessoas com empregos formais em "+sigla_uf] = Math.round(formal_uf[0].sum)
+  var total = {"Informal ou n.r.": Math.floor(total_empregados_uf[0].sum - formal_uf[0].sum),
+               "c/emprego formal": Math.round(formal_uf[0].sum)}
   res.status(200).json(total)
 }

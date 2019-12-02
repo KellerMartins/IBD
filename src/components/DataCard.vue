@@ -15,7 +15,7 @@
               <h3 v-if="!smallTitle">{{title}}</h3>
               <h5 v-else class="my-1">{{title}}</h5>
               <apexchart 
-                :type="chartType === 'pie' ? 'donut': 'line'" 
+                :type="chartType === 'pie' ? 'donut': (chartType === 'bar' ? 'bar' : 'line')"
                 :height="(chartType === 'pie'? 270 : 225)+'px'" 
                 :options="options" 
                 :series="series">
@@ -67,7 +67,7 @@ export default {
       return this.requestFailed? 140 : 252
     },
     width(){
-      return this.chartType === 'pie'? 240 : 340
+      return this.chartType === 'pie'? 240 : (this.chartType === 'line' ? 340 : 240 + this.options.labels.length*15)
     }
   },
 
@@ -101,7 +101,7 @@ export default {
                 w.globals.seriesTotals.reduce((a, b) => a + b, 0).toLocaleString() }
             }
           }
-        }  
+        },
       },
       yaxis: {
         labels: {
@@ -137,7 +137,14 @@ export default {
             if (this.chartType === "pie") {
               this.options.labels = labels
               this.series = Object.values(json)
-            } else if (this.chartType === "line") {
+              this.options.dataLabels.enabled = true
+            } 
+            else if (this.chartType === "bar") {
+              this.series = [{data:Object.values(json)}]
+              this.options.labels = labels
+              this.options.dataLabels.enabled = false
+            }
+            else if (this.chartType === "line") {
               var newLabels = []
               this.series = labels.map( l => { 
                 return {name:l, data:json[l].map(x => {
@@ -146,6 +153,7 @@ export default {
                   })} 
               })
               this.options.labels = newLabels
+              this.options.dataLabels.enabled = false
             }
           } else {
             this.options.labels = []
@@ -158,10 +166,13 @@ export default {
           if (typeof e === 'number') {
             if (e == 404)
               this.errorMessage = "Consulta inexistente"
+            else if (e == 500)
+              this.errorMessage = "Erro na consulta"
             else
               this.errorMessage = "Falha na conexão com o servidor"
           } else {
             this.errorMessage = "Erro na aplicação"
+            throw e
           }
         })
     },
