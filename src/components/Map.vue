@@ -1,6 +1,6 @@
 <template>
   <div v-resize="$_map_resize" id="container">
-      <div id="colormap" v-if="colormap">
+      <div id="colormap" v-if="false">
         <div style="margin-bottom: 20px;">
           <p class="label">Altitude</p>
         </div>
