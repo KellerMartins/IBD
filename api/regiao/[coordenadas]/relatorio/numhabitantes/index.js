@@ -27,7 +27,7 @@ module.exports = async (req, res) => {
     if ('error' in hab_regiao)
       return res.status(500).end(hab_regiao.error.message);
 
-    var total = {"Outras regiões": (total_hab[0].sum - hab_regiao[0].sum), "Habitantes na região": hab_regiao[0].sum}
+    var total = {"Outras regiões": Math.round(total_hab[0].sum - hab_regiao[0].sum), "Habitantes na região": Math.round(hab_regiao[0].sum)}
     res.status(200).json(total)
   }
 }

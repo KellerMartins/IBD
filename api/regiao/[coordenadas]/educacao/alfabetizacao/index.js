@@ -20,8 +20,8 @@ module.exports = async (req, res) => {
     if ('error' in alfabetizacao)
       return res.status(500).end(alfabetizacao.error.message);
 
-    var total = {"Nº de pessoas alfabetizadas na região": alfabetizacao[0].alfabetizados,
-                 "Nº de pessoas analfabetas na região": alfabetizacao[0].analfabetos}
+    var total = {"Nº de pessoas alfabetizadas na região": Math.round(alfabetizacao[0].alfabetizados),
+                 "Nº de pessoas analfabetas na região": Math.round(alfabetizacao[0].analfabetos)}
     res.status(200).json(total)
   }
 }
