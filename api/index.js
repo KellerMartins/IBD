@@ -23,12 +23,14 @@ module.exports = async (req, res) => {
       ],
     },
 
-    "tests": {
-      title: "Testes",
+    "report": {
+      title: "Relatório",
       icon: "mdi-test-tube",
       queries: [
-        {id:"exemplo", title: "Teste Pizza", icon: "mdi-chart-arc", chart:"pie"},
-        {id:"exemploline", title: "Teste Line", icon: "mdi-chart-line", chart:"line"},
+        {id:"relatorio/numhabitantes", title: "Nº de habitantes", icon: "mdi-chart-line", chart:"pie"},
+        {id:"relatorio/urbanorural", title: "Domicílios urbanos/rurais", icon: "mdi-chart-line", chart:"pie"},
+        {id:"relatorio/mulheresdoutoras", title: "Mulheres com doutorado", icon: "mdi-chart-line", chart:"pie"},
+        {id:"relatorio/pibmedio", title: "PIB médio por município", icon: "mdi-chart-arc", chart:"line"},
       ],
     }
   }
