@@ -1,6 +1,6 @@
 <template>
   <div v-resize="$_map_resize" id="container">
-      <div id="colormap" v-if="colormap">
+      <div id="colormap" v-if="false">
         <div style="margin-bottom: 20px;">
           <p class="label">Altitude</p>
         </div>
@@ -25,7 +25,7 @@
       v-if="loadedMap && showSelectButton && (groupingLevel === 2 || (hasSelection && groupingLevel === 1))"
       @click="$_map_pressedSelect"
     >
-      <v-icon v-if="!hasSelection && groupingLevel === 2">mdi-selection</v-icon>
+      <v-icon v-if="!hasSelection && groupingLevel === 2">mdi-selection-search</v-icon>
       <v-icon v-if="hasSelection && groupingLevel !== 0">mdi-close</v-icon>
     </v-btn>
 
@@ -303,6 +303,9 @@ export default {
       container.parentNode.appendChild( this.renderer.domElement )
       this.renderer.domElement.id = "mapCanvas"
       this.controls.domElement = this.renderer.domElement
+
+      this.spriteTex = new THREE.TextureLoader().load("/textures/disc.png");
+      this.colormapTex = new THREE.TextureLoader().load("/textures/default.png");
 
       this.moved = false;
       this.mouse = new THREE.Vector2()
@@ -589,12 +592,10 @@ export default {
       geometry.addAttribute('value', new THREE.BufferAttribute(values, 1));
       geometry.addAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
-      var spriteTex = new THREE.TextureLoader().load("/textures/disc.png");
-      var colormapTex = new THREE.TextureLoader().load("/textures/default.png");
       var material = new THREE.ShaderMaterial( {
         uniforms: {
-          sprite: { value: spriteTex },
-          colormap: { value: colormapTex},
+          sprite: { value: this.spriteTex },
+          colormap: { value: this.colormapTex},
           opacity: { value: 1 },
           multiplier: { value: getMultiplier() }
         },
