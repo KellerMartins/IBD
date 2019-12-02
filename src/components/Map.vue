@@ -304,6 +304,9 @@ export default {
       this.renderer.domElement.id = "mapCanvas"
       this.controls.domElement = this.renderer.domElement
 
+      this.spriteTex = new THREE.TextureLoader().load("/textures/disc.png");
+      this.colormapTex = new THREE.TextureLoader().load("/textures/default.png");
+
       this.moved = false;
       this.mouse = new THREE.Vector2()
       this.raycaster = new THREE.Raycaster()
@@ -589,12 +592,10 @@ export default {
       geometry.addAttribute('value', new THREE.BufferAttribute(values, 1));
       geometry.addAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
-      var spriteTex = new THREE.TextureLoader().load("/textures/disc.png");
-      var colormapTex = new THREE.TextureLoader().load("/textures/default.png");
       var material = new THREE.ShaderMaterial( {
         uniforms: {
-          sprite: { value: spriteTex },
-          colormap: { value: colormapTex},
+          sprite: { value: this.spriteTex },
+          colormap: { value: this.colormapTex},
           opacity: { value: 1 },
           multiplier: { value: getMultiplier() }
         },
