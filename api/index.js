@@ -28,6 +28,7 @@ module.exports = async (req, res) => {
       icon: "mdi-file-chart",
       queries: [
         {id:"relatorio/numhabitantes", title: "Nº de habitantes", icon: "mdi-account-group", chart:"pie"},
+        {id:"saneamento/porcentsemagua", title: "Munic. sem água encanada", icon: "mdi-water-pump", chart:"pie"},
         {id:"relatorio/urbanorural", title: "Domicílios urbanos/rurais", icon: "mdi-home-city", chart:"pie"},
         {id:"relatorio/mulheresdoutoras", title: "Mulheres com doutorado", icon: "mdi-face-woman", chart:"pie"},
         {id:"educacao/alfabetizacao", title: "Alfabetização", icon: "mdi-alphabetical", chart:"pie"},
