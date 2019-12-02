@@ -1,6 +1,6 @@
-const db = require('../../../../lib/db')
+const db = require('../../../../../lib/db')
 const escape = require('sql-template-strings')
-const utils = require('../../../../lib/utils.js')
+const utils = require('../../../../../lib/utils.js')
 
 module.exports = async (req, res) => {
   let coords = utils.parseCoords(req.query.coordenadas)

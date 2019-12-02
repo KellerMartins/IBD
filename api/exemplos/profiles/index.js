@@ -24,6 +24,6 @@ module.exports = async (req, res) => {
     `)
 
   const profilesCount  = count[0].profilesCount
-  const pageCount = Math.ceil(profilesCount / limit)
+  const pageCount = Math.round(profilesCount / limit)
   res.status(200).json({ profiles, pageCount, page})
 }
