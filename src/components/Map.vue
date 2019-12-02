@@ -113,12 +113,12 @@ export default {
       selecting: false,
       hasSelection: false,
       selectionMode: false,
-      failedToLoad: false,
     }
   },
   props: {
     showSelectButton: Boolean,
     groupingLevel: Number,
+    failedToLoad: Boolean,
     colormap: {
       type: String,
       default: ""
@@ -467,7 +467,11 @@ export default {
           this.coord_move = this.cartesianToSpherical(intersect)
           if (this.coord_start.distanceTo(this.coord_move) > 0)
             this.$_map_changeSelectionSphere(this.coord_start, this.coord_move)
+        } else if (this.groupingLevel === 1) {
+          document.body.style.cursor = "pointer"
         }
+      } else {
+        document.body.style.cursor = "default"
       }
     },
 
@@ -688,9 +692,9 @@ export default {
             this.loadedMap = true
             this.$emit('loadedMap')
           })
-          .catch(() => { this.failedToLoad = true; this.$emit('failedToLoad')})
+          .catch(() => { this.$emit('update:failedToLoad', true) })
       })
-      .catch(() => { this.failedToLoad = true; this.$emit('failedToLoad')})
+      .catch(() => { this.$emit('update:failedToLoad', true) })
   },
 }
 </script>

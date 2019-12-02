@@ -85,18 +85,15 @@
               v-bind:key="item.title"
               :style="selectedQuery==String(i) ?  { 'background': '#00bcd4', 'color':'white' } : { 'background': '', 'color':'' }"
             >
-              <v-list-item-action>
-                <v-icon :dark="selectedQuery==String(i)">{{item.icon}}</v-icon>
-              </v-list-item-action>
-              <v-list-item-content>
-                <v-list-item-title>{{item.title}}</v-list-item-title>
-              </v-list-item-content>
+                <v-icon :dark="selectedQuery==String(i)" class="mr-3">{{item.icon}}</v-icon>
+                <v-list-item-title v-text="item.title"></v-list-item-title>
+                
             </v-list-item>
           </v-list-item-group>
 
           <v-list v-if="loading">
             <v-skeleton-loader
-              height="46px"
+              height="44.5px"
               type="list-item-avatar"
               v-bind:key="item.title"
               v-for="item in queryGroups[drawerScreen].queries" 

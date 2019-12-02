@@ -35,8 +35,8 @@
           :showSelectButton="selectedQuery!=null"
           :groupingLevel="dataGroupingLevel"
           :colormap="selectedQuery!=null && selectedQuery.id!=null? 'summer' : ''"
+          :failedToLoad.sync="failedToLoad"
           @loadedMap="loaded = true"
-          @failedToLoad="failedToLoad = true"
           @enabledSelectionMode="selectionMode = true"
           @disabledSelectionMode="selectionMode = false"
           @clearedSelection="hasSelection = false"
@@ -220,10 +220,12 @@
     },
     mounted() {
       this.$http.get('/api')
-        .then(response => response.json())
+        .then(response => response.json(),
+              response => {throw response.status})
         .then(groups =>{
           this.queryGroups = groups
         })
+        .catch( () => {this.failedToLoad = true})
     },
   }
 </script>
