@@ -32,9 +32,10 @@ module.exports = async (req, res) => {
         {id:"relatorio/urbanorural", title: "Domicílios urbanos/rurais", icon: "mdi-home-city", chart:"pie"},
         {id:"relatorio/mulheresdoutoras", title: "Mulheres com doutorado", icon: "mdi-face-woman", chart:"pie"},
         {id:"educacao/alfabetizacao", title: "Alfabetização", icon: "mdi-alphabetical", chart:"pie"},
+        {id:"relatorio/pibmedio", title: "PIB médio por município", icon: "mdi-currency-usd", chart:"line"},
+        {id:"relatorio/pibmedioprimaria", title: "PIB médio X setor primario", icon: "mdi-sprout", chart:"pie"},
         {id:"relatorio/pibmediograduado", title: "PIB médio X graduação", icon: "mdi-school", chart:"line"},
         {id:"relatorio/popruralpecuaria", title: "População X pecuária", icon: "mdi-barn", chart:"pie"},
-        {id:"relatorio/pibmedio", title: "PIB médio por município", icon: "mdi-currency-usd", chart:"line"},
         {id:"relatorio/empregoformal", title: "Emprego formal", icon: "mdi-worker", chart:"bar"},
       ],
     }
