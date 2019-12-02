@@ -2,12 +2,11 @@
   <v-app id="inspire">
     <!-- Drawer -->
     <Drawer ref="drawer"
-
-      :enabled="drawer"
-      v-on:changedQuery="onChangedQuery"
-      v-on:returnedToMenu="onReturnToMenu"
-      v-on:opened="drawer=true"
-      v-on:closed="drawer=false"
+      :enabled.sync="drawer"
+      :queryGroups="queryGroups"
+      :loading="!loaded"
+      @changedQuery="onChangedQuery"
+      @returnedToMenu="onReturnToMenu"
     />
 
     <!-- Top bar -->
@@ -29,30 +28,35 @@
     <v-content>
       <v-card id="create"
         height=100%
-        v-bind:loading="!loaded"
+        v-bind:loading="!loaded && !failedToLoad"
       >
         <!-- Map -->
-        <Map ref="map" 
+        <Map ref="map"
+          :showSelectButton="selectedQuery!=null"
           :groupingLevel="dataGroupingLevel"
           :colormap="selectedQuery!=null && selectedQuery.id!=null? 'summer' : ''"
-          v-on:loadedMap="loaded = true" 
-          v-on:enabledSelectionMode="selectionMode = true"
-          v-on:disabledSelectionMode="selectionMode = false"
-          v-on:clearedSelection="hasSelection = false"
-          v-on:selected="onSelect"
-          v-on:moved="onMapMoved"
+          :failedToLoad.sync="failedToLoad"
+          @loadedMap="loaded = true"
+          @enabledSelectionMode="selectionMode = true"
+          @disabledSelectionMode="selectionMode = false"
+          @clearedSelection="hasSelection = false"
+          @selectedUF="onSelectUF"
+          @selectedRegion="onSelectRegion"
+          @selectedCountry="onSelectCountry"
+          @moved="onMapMoved"
         />
 
         <!-- Data Card -->
-        <v-card id="data"
-          elevation=24
-          v-if="hasSelection"
-          :width=dataW
-          :height=dataH
-          v-bind:style="{
-            top: dataScreenY-dataH + 'px', 
-            left: dataScreenX-dataW/2 + 'px',
-            }"
+        <DataCard
+          :title="cartTitle"
+          :smallTitle="dataGroupingLevel==2"
+          :show="hasSelection"
+          :zoom="dataZoom"
+          :queryList="queryList"
+          :query="selectedQuery!=null? selectedQuery.id: null"
+          :at="queryAt"
+          :x="dataScreenX"
+          :y="dataScreenY"
         />
 
         <!-- Data Grouping Selector -->
@@ -61,15 +65,15 @@
           mandatory
           shaped
         >
-          <v-btn>
+          <v-btn :disabled="selectedQuery === null">
             <v-icon>mdi-flag</v-icon>
             País
           </v-btn>
-          <v-btn>
+          <v-btn :disabled="selectedQuery === null">
             <v-icon>mdi-terrain</v-icon>
             UF
           </v-btn>
-          <v-btn>
+          <v-btn :disabled="selectedQuery === null">
             <v-icon>mdi-city</v-icon>
             Município
           </v-btn>
@@ -80,7 +84,7 @@
 </template>
 
 <script>
-  import isMobile from '@/plugins/isMobile.js'
+  import DataCard from './components/DataCard';
   import Drawer from './components/Drawer';
   import Map from './components/Map';
 
@@ -88,61 +92,140 @@
     components: {
       Map,
       Drawer,
+      DataCard,
     },
     props: {
       source: String,
     },
     data: () => ({
-      drawer: false,
+      drawer: null,
       loaded: false,
-      selectionMode: false,
-      hasSelection: false,
+      failedToLoad: false,
+      queryGroups: null,
       selectedQuery: null,
 
+      selectedUF: null,
+      selectionMode: false,
+      hasSelection: false,
+      selectionMin: null,
+      selectionMax: null,
+
       dataGroupingLevel: 2,
-      dataWpos: null,
       dataScreenX: 0,
       dataScreenY: 0,
-      dataW: 100,
-      dataH: 100,
+      dataZoom: 1,
     }),
     watch: {
-      dataGroupingLevel: function() {
+      dataGroupingLevel(level) {
         this.$refs.map.clearSelection()
-        this.dataWpos = null
+        if (level === 0) {
+          this.onSelectCountry()
+          if (this.selectedQuery !== null)
+            this.hasSelection = true
+        }
       },
     },
+    computed: {
+      queryAt () {
+        switch(this.dataGroupingLevel) {
+          case 0:
+            return "pais"
+          case 1:
+            if (this.hasSelection)
+              return "uf/"+this.selectedUF
+            else
+              return null
+          case 2:
+            if (this.hasSelection)
+              return "regiao/"+encodeURIComponent(this.selectionMin.x+","+this.selectionMin.y+";"+this.selectionMax.x+","+this.selectionMax.y)
+            else
+              return null
+        }
+        return null
+      },
+      cartTitle () {
+        switch(this.dataGroupingLevel) {
+          case 0:
+            return "Brasil"
+          case 1:
+            return this.selectedUF
+          case 2:
+            return this.selectionMin === null || this.selectionMax === null ? "" : 
+                   "lat. " + this.selectionMin.x.toFixed(1) + " " + this.selectionMax.x.toFixed(1) +
+                   " | lon. " + this.selectionMin.y.toFixed(1) + " " + this.selectionMax.y.toFixed(1)
+        }
+        return null
+      },
+      queryList() {
+        return Object.keys(this.queryGroups||{}).reduce((a, g) => a.concat(this.queryGroups[g].queries), [])
+      }
+    },
     methods: {
-      onReturnToMenu: function() {
+      onReturnToMenu() {
         this.$refs.map.clearSelection()
-        this.dataWpos = null
         this.selectedQuery = null
       },
 
-      onChangedQuery: function(query) {
+      onChangedQuery(query) {
         this.selectedQuery = query
-        this.$refs.map.clearSelection()
-        this.dataWpos = null
-        if (isMobile()) {
-          this.drawer = false
+        if (query === null) {
+          this.$refs.map.clearSelection()
+          this.hasSelection = false
+        } else if (this.dataGroupingLevel == 0) {
+          this.onSelectCountry()
+          this.hasSelection = true
         }
       },
 
-      onSelect: function(pos) {
+      onSelectRegion(pos, min, max) {
         if (this.selectedQuery!=null) {
           this.dataScreenX = pos.x
           this.dataScreenY = pos.y
+
           this.hasSelection = true
+          this.selectionMin = min
+          this.selectionMax = max
+        } else {
+          this.$refs.map.clearSelection()
+          this.hasSelection = false
+          this.selectionMin = null
+          this.selectionMax = null
+        }
+      },
+
+      onSelectUF(cod, pos) {
+        if (this.selectedQuery!=null) {
+          this.dataScreenX = pos.x
+          this.dataScreenY = pos.y
+
+          this.hasSelection = true
+          this.selectedUF = cod
         } else {
           this.$refs.map.clearSelection()
           this.hasSelection = false
         }
       },
 
-      onMapMoved: function(pos) {
+      onMapMoved(pos, zoom) {
         this.dataScreenX = pos.x
         this.dataScreenY = pos.y
+        this.dataZoom = zoom
       },
+
+      onSelectCountry() {
+        let pos = this.$refs.map.selectCountry()
+        this.dataScreenX = pos.x
+        this.dataScreenY = pos.y
+      }
+    },
+    mounted() {
+      this.$http.get('/api')
+        .then(response => response.json(),
+              response => {throw response.status})
+        .then(groups =>{
+          this.queryGroups = groups
+        })
+        .catch( () => {this.failedToLoad = true})
     },
   }
 </script>
@@ -160,11 +243,6 @@
 
   #title {
     font-weight:bold;
-  }
-
-  #data {
-    position: absolute;
-    z-index: 1;
   }
 
   #grouping {
