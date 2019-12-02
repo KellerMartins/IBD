@@ -10,6 +10,6 @@ module.exports = async (req, res) => {
   if ('error' in total_doutoras)
     return res.status(500).end(total_doutoras.error.message);
 
-  var total = {"Total de doutoras no Brasil": Math.ceil(total_doutoras[0].sum)}
+  var total = {"Total de doutoras no Brasil": Math.round(total_doutoras[0].sum)}
   res.status(200).json(total)
 }

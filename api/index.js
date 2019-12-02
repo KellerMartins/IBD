@@ -25,12 +25,14 @@ module.exports = async (req, res) => {
 
     "report": {
       title: "Relatório",
-      icon: "mdi-test-tube",
+      icon: "mdi-file-chart",
       queries: [
-        {id:"relatorio/numhabitantes", title: "Nº de habitantes", icon: "mdi-chart-line", chart:"pie"},
-        {id:"relatorio/urbanorural", title: "Domicílios urbanos/rurais", icon: "mdi-chart-line", chart:"pie"},
-        {id:"relatorio/mulheresdoutoras", title: "Mulheres com doutorado", icon: "mdi-chart-line", chart:"pie"},
-        {id:"relatorio/pibmedio", title: "PIB médio por município", icon: "mdi-chart-arc", chart:"line"},
+        {id:"relatorio/numhabitantes", title: "Nº de habitantes", icon: "mdi-account-group", chart:"pie"},
+        {id:"relatorio/urbanorural", title: "Domicílios urbanos/rurais", icon: "mdi-home-city", chart:"pie"},
+        {id:"relatorio/mulheresdoutoras", title: "Mulheres com doutorado", icon: "mdi-face-woman", chart:"pie"},
+        {id:"educacao/alfabetizacao", title: "Alfabetização", icon: "mdi-alphabetical", chart:"pie"},
+        {id:"relatorio/pibmedio", title: "PIB médio por município", icon: "mdi-currency-usd", chart:"line"},
+        {id:"relatorio/empregoformal", title: "Emprego formal", icon: "mdi-worker", chart:"pie"},
       ],
     }
   }
