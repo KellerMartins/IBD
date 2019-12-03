@@ -20,7 +20,7 @@ module.exports = async (req, res) => {
     return res.status(500).end(doutoras_uf.error.message);
 
   var total = {}
-  total["Doutoras em outras UFs"] = Math.floor(total_doutoras[0].sum - doutoras_uf[0].sum)
+  total["Doutoras em outras UFs"] = Math.round(total_doutoras[0].sum - doutoras_uf[0].sum)
   total["Doutoras em "+req.query.sigla.toUpperCase()] = Math.round(doutoras_uf[0].sum)
   res.status(200).json(total)
 }
