@@ -123,9 +123,9 @@
           <p class="ma-4 text-center font-weight-light"> Trabalho final da disciplina Introdução a Banco de Dados UFMG 2019/2 </p>
           <p class="mx-3 mt-3 mb-0 font-weight-light"> Autores: </p>
           <v-list>
-            <v-list-item @click="openNewTab('https://kellermartins.github.io');">
+            <v-list-item @click=";">
               <v-list-item-content>
-                <v-list-item-title>Keller Clayderman M. de Oliveira</v-list-item-title>
+                <v-list-item-title>Keller Clayderman</v-list-item-title>
                 <v-list-item-subtitle>Interface, tratamento inicial dos</v-list-item-subtitle>
                 <v-list-item-subtitle>dados, criação do banco de dados</v-list-item-subtitle>
               </v-list-item-content>
