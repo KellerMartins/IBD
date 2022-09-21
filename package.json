@@ -18,7 +18,7 @@
     "vue": "^2.6.10",
     "vue-apexcharts": "^1.5.1",
     "vue-resource": "^1.5.1",
-    "vuetify": "^2.1.0"
+    "vuetify": "^2.6.10"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^4.0.0",
