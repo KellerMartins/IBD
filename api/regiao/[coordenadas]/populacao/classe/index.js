@@ -10,11 +10,11 @@ module.exports = async (req, res) => {
   else {
     let [min, max] = coords;
     const classe = await db.query(escape`
-      SELECT SUM(num_classe_A) as A20_inf, 
-             SUM(num_classe_B) as B10_20, 
-             SUM(num_classe_C) as C4_10, 
-             SUM(num_classe_D) as D2_4, 
-             SUM(num_classe_E) as E0_2
+      SELECT SUM("num_classe_A") as A20_inf, 
+             SUM("num_classe_B") as B10_20, 
+             SUM("num_classe_C") as C4_10, 
+             SUM("num_classe_D") as D2_4, 
+             SUM("num_classe_E") as E0_2
       FROM populacao NATURAL JOIN municipio NATURAL JOIN coord
       WHERE latitude_coord  > ${min.lat} AND latitude_coord  < ${max.lat} AND
             longitude_coord > ${min.lon} AND longitude_coord < ${max.lon}

@@ -10,7 +10,7 @@ module.exports = async (req, res) => {
              AVG(tamanho_coord) as tamanho,
              sigla_uf as sigla
       FROM municipio NATURAL JOIN coord NATURAL JOIN uf
-      GROUP BY cod_uf
+      GROUP BY cod_uf, sigla_uf
       ORDER BY cod_uf
     `)
 

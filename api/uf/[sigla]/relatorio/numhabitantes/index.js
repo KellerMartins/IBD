@@ -19,6 +19,6 @@ module.exports = async (req, res) => {
   if ('error' in hab_uf)
     return res.status(500).end(hab_uf.error.message);
 
-  var total = {"Outras UFs": (total_hab[0].sum - hab_uf[0].sum), "Habitantes na UF": hab_uf[0].sum}
+  var total = {"Outras UFs": (total_hab[0].sum - hab_uf[0].sum), "Habitantes na UF": +hab_uf[0].sum}
   res.status(200).json(total)
 }

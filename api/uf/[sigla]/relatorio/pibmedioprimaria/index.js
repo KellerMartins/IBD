@@ -7,7 +7,7 @@ module.exports = async (req, res) => {
     FROM municipio NATURAL JOIN uf NATURAL JOIN economia NATURAL JOIN municipio_atividade NATURAL JOIN atividade
     WHERE sigla_uf = ${req.query.sigla.toUpperCase()} AND
           ano = 2016 AND 
-          setor_atividade != "primário" AND
+          setor_atividade != 'primário' AND
           pos_atividade = 1
   `)
 
@@ -19,7 +19,7 @@ module.exports = async (req, res) => {
     FROM municipio NATURAL JOIN uf NATURAL JOIN economia NATURAL JOIN municipio_atividade NATURAL JOIN atividade
     WHERE sigla_uf = ${req.query.sigla.toUpperCase()}  AND
           ano = 2016 AND 
-          setor_atividade = "primário" AND
+          setor_atividade = 'primário' AND
           pos_atividade = 1  
   `)
 
