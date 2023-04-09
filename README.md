@@ -2,7 +2,7 @@
 
 Trabalho final da disciplina de Introdução a Banco de dados - UFMG 2019/2.
 
-Disponível em: https://ibge.kellermartins.now.sh/
+Disponível em: https://ibge-kellermartins.vercel.app
 
 Integrantes:
 
@@ -19,11 +19,11 @@ O frontend foi desenvolvido em JavaScript utilizando as frameworks Vue.js e Vuet
 
 ## Backend
 
-O backend foi desenvolvido em Node.js utilizando o runtime Node.js do ZEIT Now, que gera e serve _serverless functions_ do código fonte presentes na pasta `/api`
+O backend foi desenvolvido em Node.js utilizando o runtime Node.js da Vercel, que gera e serve _serverless functions_ do código fonte presentes na pasta `/api`
 
 ## Banco de dados
 
-O banco de dados foi desenvolvido em MySQL, e seus dados estão disponíveis em [.sql](https://github.com/KellerMartins/IBD/releases/download/v1.0/ibge.sql) e [.json](https://github.com/KellerMartins/IBD/releases/download/v1.0/ibge_csv.zip) na página de releases do repositório
+O banco de dados foi desenvolvido em PosgreSQL, e seus dados estão disponíveis em [.sql](https://github.com/KellerMartins/IBD/releases/download/v1.0/ibge_postgres.sql) e [.csv](https://github.com/KellerMartins/IBD/releases/download/v1.0/ibge_csv.zip) na página de releases do repositório
 
 ## Desenvolvimento
 #### Somente frontend
@@ -48,25 +48,25 @@ Instale as dependências com:
 yarn install
 ```
 
-Depois, instale o ZEIT Now global
+Depois, instale o Vercel global
 ```
-yarn global add now@latest
+yarn global add vercel
 ```
 
-Configure seu banco de dados MySQL com os dados disponibilizados. Após isso, crie um arquivo .env na raiz do projeto com os dados de host, usuário, banco de dados e senha, similar ao abaixo:
+Configure seu banco de dados PostgreSQL com os dados disponibilizados. Após isso, crie um arquivo .env na raiz do projeto com os dados de host, usuário, banco de dados e senha, similar ao abaixo:
 
 ```
-MYSQL_HOST=database.host.com
-MYSQL_USER=user
-MYSQL_DATABASE=database
-MYSQL_PASSWORD=passwrd
+POSTGRES_HOST=database.host.com
+POSTGRES_USER=user
+POSTGRES_DATABASE=database
+POSTGRES_PASSWORD=passwrd
 ```
 Então, para compilar para desenvolvimento e servir localmente
 ```
-now dev
+vercel dev
 ```
 
 Para realizar o deploy em produção:
 ```
-now
+vercel
 ```
