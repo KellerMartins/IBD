@@ -4,6 +4,6 @@ module.exports = async (req, res) => {
   let category = req.query.category;
   let type = req.query.type;
   let location = "regiao" in req.query ? "regiao" : "uf" in req.query ? "uf" : "pais";
-
+  console.log(queries);
   return queries[category][type][location](req, res);
 };
