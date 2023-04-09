@@ -146,8 +146,11 @@ export default {
             }
             else if (this.chartType === "line") {
               var newLabels = []
-              this.series = labels.map( l => { 
-                return {name:l, data:json[l].map(x => {
+              this.series = labels.map( l => {
+                let data = [...json[l]];
+                data.sort((a, b) => a.x - b.x);
+
+                return {name:l, data:data.map(x => {
                   if (!newLabels.includes(x.x)) 
                     newLabels.push(x.x); return x.y
                   })} 
