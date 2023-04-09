@@ -19,6 +19,7 @@
       left
       fixed
       bottom
+      x-large
       :dark="!selectionMode && !hasSelection"
       :loading="!loadedMap"
       :color="selectionMode || hasSelection ? 'yellow':'cyan'"

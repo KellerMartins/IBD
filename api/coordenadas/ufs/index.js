@@ -1,8 +1,7 @@
-const db = require('../../../lib/db')
-const escape = require('sql-template-strings')
+const db = require("../../../lib/db");
+const escape = require("sql-template-strings");
 
 module.exports = async (req, res) => {
-  
   const ufs = await db.query(escape`
       SELECT AVG(longitude_coord) as longitude, 
              AVG(latitude_coord) as latitude, 
@@ -12,10 +11,8 @@ module.exports = async (req, res) => {
       FROM municipio NATURAL JOIN coord NATURAL JOIN uf
       GROUP BY cod_uf, sigla_uf
       ORDER BY cod_uf
-    `)
+    `);
 
-  if ('error' in ufs)
-    res.status(500).end(ufs.error.message);
-  else
-    res.status(200).json({ ufs })
-}
+  if ("error" in ufs) res.status(500).end(ufs.error.message);
+  else res.status(200).json({ ufs });
+};

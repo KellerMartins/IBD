@@ -64,7 +64,7 @@ export default {
 
   computed: {
     height(){
-      return this.requestFailed? 140 : 252
+      return this.requestFailed? 140 : 270
     },
     width(){
       return this.chartType === 'pie'? 240 : (this.chartType === 'line' ? 340 : 240 + this.options.labels.length*15)
@@ -119,10 +119,10 @@ export default {
   }),
   methods:{
     get_data() {
-      console.log('/api/'+this.at+'/'+this.query)
+      console.log('/api/dados/'+this.query+'?'+this.at)
       this.requestFailed = false
       this.loading = true
-      this.$http.get('/api/'+this.at+'/'+this.query)
+      this.$http.get('/api/dados/'+this.query+'?'+this.at)
         .then(response => response.json(),
               response => { throw response.status })
         .then(json =>{

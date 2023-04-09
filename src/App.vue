@@ -132,12 +132,12 @@
             return "pais"
           case 1:
             if (this.hasSelection)
-              return "uf/"+this.selectedUF
+              return "uf="+this.selectedUF
             else
               return null
           case 2:
             if (this.hasSelection)
-              return "regiao/"+encodeURIComponent(this.selectionMin.x+","+this.selectionMin.y+";"+this.selectionMax.x+","+this.selectionMax.y)
+              return "regiao="+encodeURIComponent(this.selectionMin.x+","+this.selectionMin.y+";"+this.selectionMax.x+","+this.selectionMax.y)
             else
               return null
         }
